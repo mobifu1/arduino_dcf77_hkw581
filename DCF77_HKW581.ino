@@ -30,7 +30,6 @@ const char *anomaly1[]  {"Same Weather ", "Jump 1 ", "Jump 2 ", "Jump 3 "};
 const char *anomaly2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
 //--------------------------------------------------------------------------
-boolean packet_arrived = false;
 boolean lock;
 String meteodata;
 int decoderbit;
@@ -42,8 +41,8 @@ byte hkw_out[24] {0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0,
 //Example:
 //minute 0: first 14 bits
 //minute 1: first 14 bits
-//minute 2: first 14 bits & time & hour & date & month & dow & year
-//01011010010110 11100011000111 00001111110011 10011010 01000100 11100 011 00101000
+//minute 2: first 14 bits                      & time & hour  & date & month & dow & year
+//01011010010110 11100011000111 00001111110011 10011010 01000100 11100 011     00101000
 //01000110 00001000 11001110
 
 //HKW581 Pins:     chip needs 40 seconds to warm up
@@ -70,13 +69,12 @@ void setup() {
   DCF.Start();
   Serial.println("Waiting for DCF77 time ... ");
   Serial.println("It will take at least 2 minutes until a first update can be processed.");
-  setTime(13, 02, 00, 31, 12, 2016);
+  //setTime(13, 02, 00, 31, 12, 2016);
   //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
   //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
 
   meteodata = "111001101100011010110110"; //Test: 24bits: Snow, Heavy rain, SO, 9-Bf, No, 23⁰c
 
-  packet_arrived = false;
 
 }
 //----------------------------------------------------------------------------------------------
@@ -94,21 +92,87 @@ void loop() {
 
   if (second() == 59 && lock == false) {
 
+    lock = true;
+    int result = (minute() + 1) % 3;
     String dcf_bitstream = DCF.getEncWeatherData();
     Serial.println("Bitstream:" + String(dcf_bitstream));
-    show_region();
-    lock = true;
+    collect_data(dcf_bitstream, result); //result can 0=final,1=2.,2=1.packet
+
+    if (result == 0 ) {
+      //write_data_to_hkw(); // input > hkw_in[]
+      //read_data_from_hkw(); // result > meteodata
+      show_region();
+    }
   }
-  if (second() == 0) {
+
+  if (second() == 30) {
     lock = false;
   }
+}
+//----------------------------------------------------------------------------------------------
+void collect_data(String input, int packet) { //packet can 0=final,1=2.,2=1. packet
 
-  if (packet_arrived == true) {
+  int bit_count;
+  if (packet == 2) { //1.packet
+    bit_count = 0;
+    for (int k = 0; k < 14; k++) {
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+  }
 
-    //write_data_to_hkw(); // input > hkw_in[]
-    //read_data_from_hkw(); // result > meteodata
-    //show_region();
-    //show_data();
+  if (packet == 1) { //2.packet
+    bit_count = 14;
+    for (int k = 0; k < 14; k++) {
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+  }
+
+  if (packet == 0) { //final
+    bit_count = 28;
+    for (int k = 0; k < 14; k++) {
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+
+    for (int k = 21; k < 29; k++) {//minute
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+    for (int k = 29; k < 36; k++) {//hour
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+    for (int k = 36; k < 42; k++) {//date
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+    for (int k = 45; k < 50; k++) {//month
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+    for (int k = 42; k < 45; k++) {//dow
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+    for (int k = 50; k < 58; k++) {//year
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+    for (int k = 0; k < 82; k++) {
+      Serial.print(String(hkw_in[0]));
+    }
+    Serial.println();
   }
 }
 //----------------------------------------------------------------------------------------------
@@ -212,7 +276,6 @@ void show_region() {
 //----------------------------------------------------------------------------------------------
 void show_data() {
 
-  packet_arrived = false;
   Serial.println("Start:");
   //+++++++++++++++++++++++++++++++++++++++++++++++++++
   Serial.print("Winddirection     =   ");
