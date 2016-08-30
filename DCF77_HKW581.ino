@@ -92,12 +92,14 @@ void loop() {
     setTime(DCFtime);
   }
 
-  if (second() == 30 && lock == false) {
-    String weatherbits = DCF.getEncWeatherData();
-    Serial.println("Weatherbits:" + String(weatherbits));
+  if (second() == 59 && lock == false) {
+
+    String dcf_bitstream = DCF.getEncWeatherData();
+    Serial.println("Bitstream:" + String(dcf_bitstream));
+    show_region();
     lock = true;
   }
-  if (second() == 31) {
+  if (second() == 0) {
     lock = false;
   }
 
