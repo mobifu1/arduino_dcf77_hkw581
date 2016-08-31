@@ -105,7 +105,7 @@ void loop() {
     }
   }
 
-  if (second() == 30) {
+  if (second() == 58) {
     lock = false;
   }
 }
@@ -170,7 +170,7 @@ void collect_data(String input, int packet) { //packet can 0=final,1=2.,2=1. pac
       bit_count++;
     }
     for (int k = 0; k < 82; k++) {
-      Serial.print(String(hkw_in[0]));
+      Serial.print(String(hkw_in[k]));
     }
     Serial.println();
   }
