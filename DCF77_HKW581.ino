@@ -96,7 +96,7 @@ void loop() {
     int result = (minute() + 1) % 3;
     String dcf_bitstream = DCF.getEncWeatherData();
     Serial.println("Bitstream:" + String(dcf_bitstream));
-    collect_data(dcf_bitstream, result); //result can 0=final,1=2.,2=1.packet
+    collect_data(dcf_bitstream, result); //result can 0=final,2=2.,1=1.packet
 
     if (result == 0 ) {
       //write_data_to_hkw(); // input > hkw_in[]
@@ -110,10 +110,10 @@ void loop() {
   }
 }
 //----------------------------------------------------------------------------------------------
-void collect_data(String input, int packet) { //packet can 0=final,1=2.,2=1. packet
+void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. packet
 
   int bit_count;
-  if (packet == 2) { //1.packet
+  if (packet == 1) { //1.packet
     bit_count = 0;
     for (int k = 0; k < 14; k++) {
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
@@ -122,7 +122,7 @@ void collect_data(String input, int packet) { //packet can 0=final,1=2.,2=1. pac
     }
   }
 
-  if (packet == 1) { //2.packet
+  if (packet == 2) { //2.packet
     bit_count = 14;
     for (int k = 0; k < 14; k++) {
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
