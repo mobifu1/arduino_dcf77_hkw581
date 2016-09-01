@@ -32,7 +32,7 @@ const char *anomaly2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 //User Region:
 byte user_region = 22; //Hannover
 //Region Forecast:
-byte forecast_values[6][4] = { //1.day / 2.day / 3.day / 4.day
+byte forecast_high_values[6][4] = { //1.day / 2.day / 3.day / 4.day
 {0,0,0,0}, //wind direction
 {0,0,0,0}, //wind strenth
 {0,0,0,0}, //day 
@@ -41,6 +41,24 @@ byte forecast_values[6][4] = { //1.day / 2.day / 3.day / 4.day
 {0,0,0,0}, //temperatur
 {0,0,0,0}, //decoder status
 }; 
+byte forecast_low_values[6][4] = { //1.day / 2.day / 3.day / 4.day
+{0,0,0,0}, //wind direction
+{0,0,0,0}, //wind strenth
+{0,0,0,0}, //day 
+{0,0,0,0}, //night
+{0,0,0,0}, //weather anomalie
+{0,0,0,0}, //temperatur
+{0,0,0,0}, //decoder status
+}; 
+//Time schedule:
+//23:02-01:59 > 1.day=today Höchstwerte
+//02:02-04:59 > 1.day=today Tiefststwerte
+//05:02-07:59 > 2.day       Höchstwerte
+//08:02-10:59 > 2.day       Tiefststwerte
+//11:02-13:59 > 3.day       Höchstwerte
+//14:02-16:59 > 3.day       Tiefststwerte
+//17:02-19:59 > 4.day       Höchstwerte
+//20:02-22:59 > 4.day       Wetterprognose & Temperatur       
 
 //--------------------------------------------------------------------------
 boolean lock;
@@ -376,6 +394,81 @@ void show_data() {
     Serial.println (" OK");
   } else {
     Serial.println (" NOT OK");
+  }
+}
+//---------------------------------------------------------------------
+void fill_forecast_table(){
+  
+  byte day = 0;
+  boolean high_value = false;
+  if (decoder_status == 10){
+   if (region_code == user_region){
+     if (hour() >= 23 && hour() =< 1){//23:02-01:59 > 1.day=today Höchstwerte
+      day = 0; 
+      high_value = true;
+     }
+     if (hour() >= 2 && hour() =< 4){//02:02-04:59 > 1.day=today Tiefststwerte
+      day = 0;  
+      high_value = false;
+     }
+     if (hour() >= 5 && hour() =< 7){//05:02-07:59 > 2.day Höchstwerte
+      day = 1;  
+      high_value = true;
+     }
+     if (hour() >= 8 && hour() =< 10){//08:02-10:59 > 2.day Tiefststwerte
+      day = 1; 
+      high_value = false;
+     }
+     if (hour() >= 11 && hour() =< 13){//11:02-13:59 > 3.day Höchstwerte
+      day = 2;
+      high_value = true;
+     }
+     if (hour() >= 14 && hour() =< 16){//14:02-16:59 > 3.day Tiefststwerte
+      day = 2;
+      high_value = false;
+     }
+     if (hour() >= 17 && hour() =< 19){//17:02-19:59 > 4.day Höchstwerte
+      day = 3;
+      high_value = true;
+     }
+     if (hour() >= 20 && hour() =< 22){//20:02-22:59 > 4.day Wetterprognose & Temperatur
+      day = 3; 
+      high_value = false;
+     }
+   
+    if (high_value == true){
+     byte forecast_high_values[0][day] = winddirection; //1.day / 2.day / 3.day / 4.day
+     byte forecast_high_values[1][day] = windstrength;
+     byte forecast_high_values[2][day] = day_value;
+     byte forecast_high_values[3][day] = night_value;
+     byte forecast_high_values[4][day] = weather_anomalie;
+     byte forecast_high_values[5][day] = temperatur;
+     byte forecast_high_values[6][day] = decoder_status;
+    }
+    if (high_value == false){
+     byte forecast_low_values[0][day] = winddirection; //1.day / 2.day / 3.day / 4.day
+     byte forecast_low_values[1][day] = windstrength;
+     byte forecast_low_values[2][day] = day_value;
+     byte forecast_low_values[3][day] = night_value;
+     byte forecast_low_values[4][day] = weather_anomalie;
+     byte forecast_low_values[5][day] = temperatur;
+     byte forecast_low_values[6][day] = decoder_status;
+    }
+   }
+ }
+}
+//---------------------------------------------------------------------
+void show_forcast_table(){
+  
+  Serial.print("Location: ");
+  Serial.println(region[region_code]);
+  Serial.print("High: ");
+  for (int K = 0; k<4; k++){
+   Serial.print("Day " + String(k+1) + ": Wind Dir: " + byte forecast_high_values[0][k] + " Wind Strength: " + byte forecast_high_values[1][k] + " Day: " +  byte forecast_high_values[2][k] + " Night: " +  byte forecast_high_values[3][k] + " Anomalie: " +  byte forecast_high_values[4][k]  + " Temp: " + byte forecast_high_values[5][k]  + " Decoder Status: " + byte forecast_high_values[6][k]);
+  }
+  Serial.print("Low: ");
+  for (int K = 0; k<4; k++){
+   Serial.print("Day " + String(k+1) + ": Wind Dir: " + byte forecast_low_values[0][k] + " Wind Strength: " + byte forecast_low_values[1][k] + " Day: " +  byte forecast_low_values[2][k] + " Night: " +  byte forecast_low_values[3][k] + " Anomalie: " +  byte forecast_low_values[4][k]  + " Temp: " + byte forecast_low_values[5][k]  + " Decoder Status: " + byte forecast_low_values[6][k]);
   }
 }
 //---------------------------------------------------------------------
