@@ -26,7 +26,7 @@ const char *heavyweather[]  {  "None", "Heavy Weather 24 hrs.", "Heavy weather D
 const char *probprecip[]  {"0 %", "15 %", "30 %", "45 %", "60 %", "75 %", "90 %", "100 %"};
 const char *winddirection[]  { "N", "NO", "O", "SO", "S", "SW", "W", "NW", "Changeable", "Foen", "Biese N/O", "Mistral N", "Scirocco S", "Tramont W", "Reserved", "Reserved"};
 const char *windstrength[]  {"0", "0-2", "3-4", "5-6", "7", "8", "9", ">=10"};
-const char *anomaly1[]  {"Same Weather ", "Jump 1 ", "Jump 2 ", "Jump 3 "};
+const char *anomaly1[]  {"No ", "Jump 1 ", "Jump 2 ", "Jump 3 "};
 const char *anomaly2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
 //User Region:
@@ -110,15 +110,13 @@ void setup() {
   DCF.Start();
   Serial.println("Waiting for DCF77 time ... ");
   Serial.println("It will take at least 2 minutes until a first update can be processed.");
-  Serial.print("Region: ");
+  Serial.print("My Region: ");
   Serial.println(region[user_region]);
   //setTime(13, 02, 00, 31, 12, 2016);
   //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
   //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
 
   meteodata = "111001101100011010110110"; //Test: 24bits: Snow, Heavy rain, SO, 9-Bf, No, 23⁰c
-
-
 }
 //----------------------------------------------------------------------------------------------
 void loop() {
@@ -141,7 +139,7 @@ void loop() {
     Serial.println("Bitstream:" + String(dcf_bitstream));
     collect_data(dcf_bitstream, result); //result can 0=final,2=2.,1=1.packet
 
-    if (result == 0 ) {//minute:3,6,9,12........
+    if (result == 0 ) {//minute:2,5,8,11........
       //write_data_to_hkw(); // input > hkw_in[]
       //read_data_from_hkw(); // result > meteodata
       show_region();
@@ -310,6 +308,7 @@ void show_region() {
   //22:00 = 0,  00:59 = 2*60 + 59 = 179
   region_code = region_code / 3;
 
+  Serial.println();
   if (hour() < 10) {
     Serial.print("0" + String(hour()) + ":");
   }
@@ -433,7 +432,9 @@ void fill_forecast_table() {
   byte day_x = 0;
   boolean high_value = false;
   int utc_hour_int = hour();
+
   utc_hour_int -= daylight_saving_time;
+
   if (utc_hour_int < 0)utc_hour_int += 24;
 
   if (decoder_status == 10) {
@@ -495,6 +496,7 @@ void fill_forecast_table() {
 //---------------------------------------------------------------------
 void show_forcast_table() {
 
+  Serial.println();
   Serial.print("Location: ");
   Serial.println(region[user_region]);
   Serial.println("High: ");
