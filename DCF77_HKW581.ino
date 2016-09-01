@@ -29,6 +29,19 @@ const char *windstrength[]  {"0", "0-2", "3-4", "5-6", "7", "8", "9", ">=10"};
 const char *anomaly1[]  {"Same Weather ", "Jump 1 ", "Jump 2 ", "Jump 3 "};
 const char *anomaly2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
+//User Region:
+byte user_region = 22; //Hannover
+//Region Forecast:
+byte forecast_values[6][4] = { //1.day / 2.day / 3.day / 4.day
+{0,0,0,0}, //wind direction
+{0,0,0,0}, //wind strenth
+{0,0,0,0}, //day 
+{0,0,0,0}, //night
+{0,0,0,0}, //weather anomalie
+{0,0,0,0}, //temperatur
+{0,0,0,0}, //decoder status
+}; 
+
 //--------------------------------------------------------------------------
 boolean lock;
 String meteodata;
@@ -69,6 +82,7 @@ void setup() {
   DCF.Start();
   Serial.println("Waiting for DCF77 time ... ");
   Serial.println("It will take at least 2 minutes until a first update can be processed.");
+  Serial.println("Region: "+ region[user_region]);
   //setTime(13, 02, 00, 31, 12, 2016);
   //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
   //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
