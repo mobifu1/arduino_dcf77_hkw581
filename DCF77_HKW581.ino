@@ -189,7 +189,7 @@ void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. pac
       bit_count++;
     }
     
-    hkw_in[bit_count] = 0 //leading zero for minute
+    hkw_in[bit_count] = 0; //leading zero for minute
     bit_count++;
     
     for (int k = 20; k < 27; k++) {//minute bit 21-27 > gesamt:8bits
@@ -198,9 +198,9 @@ void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. pac
       bit_count++;
     }
     
-    hkw_in[bit_count] = 0//leading zeros for hour
+    hkw_in[bit_count] = 0;//leading zeros for hour
     bit_count++;
-    hkw_in[bit_count] = 0
+    hkw_in[bit_count] = 0;
     bit_count++;
     
     for (int k = 28; k < 34; k++) {//hour bit 29-34  > gesamt:8bits
@@ -209,9 +209,9 @@ void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. pac
       bit_count++;
     }
     
-    hkw_in[bit_count] = 0//leading zeros for day
+    hkw_in[bit_count] = 0;//leading zeros for day
     bit_count++;
-    hkw_in[bit_count] = 0
+    hkw_in[bit_count] = 0;
     bit_count++;
     
     for (int k = 35; k < 41; k++) {//day bit 36-41  > gesamt:8bits
