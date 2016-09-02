@@ -29,10 +29,14 @@ const char *windstrength[]  {"0", "0-2", "3-4", "5-6", "7", "8", "9", ">=10"};
 const char *anomaly1[]  {"No ", "Jump 1 ", "Jump 2 ", "Jump 3 "};
 const char *anomaly2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
+//Version:
+String sw_version = "V0.1";
+
 //User Region:
 int region_code;
 byte user_region = 22; //Hannover 22
 byte daylight_saving_time = 0;
+
 //Region Forecast:
 byte forecast_high_values[7][4] = { //1.day / 2.day / 3.day / 4.day
   {0, 0, 0, 0}, //wind direction
@@ -108,7 +112,8 @@ void setup() {
 
   Serial.begin(9600);
   DCF.Start();
-  Serial.println("Waiting for DCF77 time ... ");
+  Serial.println(sw_version);
+  Serial.println("Waiting for DFC77 Signal.................");
   Serial.println("It will take at least 2 minutes until a first update can be processed.");
   Serial.print("My Region: ");
   Serial.println(region[user_region]);
@@ -180,40 +185,40 @@ void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. pac
   }
 
   if (packet == 0) { //final
-  
+
     bit_count = 28;
-    
+
     for (int k = 0; k < 14; k++) {
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    
+
     hkw_in[bit_count] = 0; //leading zero for minute
     bit_count++;
-    
+
     for (int k = 20; k < 27; k++) {//minute bit 21-27 > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    
+
     hkw_in[bit_count] = 0;//leading zeros for hour
     bit_count++;
     hkw_in[bit_count] = 0;
     bit_count++;
-    
+
     for (int k = 28; k < 34; k++) {//hour bit 29-34  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    
+
     hkw_in[bit_count] = 0;//leading zeros for day
     bit_count++;
     hkw_in[bit_count] = 0;
     bit_count++;
-    
+
     for (int k = 35; k < 41; k++) {//day bit 36-41  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
