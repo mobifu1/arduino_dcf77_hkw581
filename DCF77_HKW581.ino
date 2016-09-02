@@ -180,39 +180,56 @@ void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. pac
   }
 
   if (packet == 0) { //final
+  
     bit_count = 28;
+    
     for (int k = 0; k < 14; k++) {
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-
-    for (int k = 21; k < 29; k++) {//minute
+    
+    hkw_in[bit_count] = 0 //leading zero for minute
+    bit_count++;
+    
+    for (int k = 20; k < 27; k++) {//minute bit 21-27 > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    for (int k = 29; k < 36; k++) {//hour
+    
+    hkw_in[bit_count] = 0//leading zeros for hour
+    bit_count++;
+    hkw_in[bit_count] = 0
+    bit_count++;
+    
+    for (int k = 28; k < 34; k++) {//hour bit 29-34  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    for (int k = 36; k < 42; k++) {//date
+    
+    hkw_in[bit_count] = 0//leading zeros for day
+    bit_count++;
+    hkw_in[bit_count] = 0
+    bit_count++;
+    
+    for (int k = 35; k < 41; k++) {//day bit 36-41  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    for (int k = 45; k < 50; k++) {//month
+    for (int k = 44; k < 49; k++) {//month bit 45-49  > gesamt:5bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    for (int k = 42; k < 45; k++) {//dow
+    for (int k = 41; k < 44; k++) {//dow 42-44  > gesamt:3bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    for (int k = 50; k < 58; k++) {//year
+    for (int k = 49; k < 57; k++) {//year 50-57  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
