@@ -26,8 +26,8 @@ const char *heavyweather[]  {  "None", "Heavy Weather 24 hrs.", "Heavy weather D
 const char *rain_prop[]  {"0 %", "15 %", "30 %", "45 %", "60 %", "75 %", "90 %", "100 %"};
 const char *winddirection[]  { "N", "NO", "O", "SO", "S", "SW", "W", "NW", "Changeable", "Foen", "Biese N/O", "Mistral N", "Scirocco S", "Tramont W", "Reserved", "Reserved"};
 const char *windstrength[]  {"0", "0-2", "3-4", "5-6", "7", "8", "9", ">=10"};
-const char *anomaly1[]  {"No ", "Jump 1 ", "Jump 2 ", "Jump 3 "};
-const char *anomaly2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
+const char *anomaly_1[]  {"No ", "1 ", "2 ", "3 "};
+const char *anomaly_2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
 //Version:
 String sw_version = "V0.1";
@@ -400,7 +400,7 @@ void calc_data() {
       }
       //+++++++++++++++++++++++++++++++++++++++++++++++++++
       if (debugging == true) {
-        Serial.print("Weather Anomay =      ");
+        Serial.print("Weather Anomaly =      ");
         Serial.print(meteodata.substring(15, 16));
         Serial.print(" ");
       }
@@ -418,24 +418,7 @@ void calc_data() {
         }
       }
       //+++++++++++++++++++++++++++++++++++++++++++++++++++
-      if (weather_anomaly == 0) {
-        if (debugging == true) {
-          Serial.print("Signif Weather    =   ");
-          Serial.print(meteodata.substring(8, 12));
-          Serial.print(" ");
-        }
-
-        val = string_to_int(8, 12); //?????
-        val = reverse_bits (val, 4);
-        // = val;
-
-        if (debugging == true) {
-          Serial.print(val, HEX);
-          Serial.print(" ");
-          Serial.println(heavyweather[val]);
-        }
-      }
-      else {
+      if (weather_anomaly == 1) {
         if (debugging == true) {
           Serial.print("Anomaly Weather 1 =   ");
           Serial.print(meteodata.substring(8, 10));
@@ -446,7 +429,7 @@ void calc_data() {
 
         if (debugging == true) {
           Serial.print(val, HEX);
-          Serial.println(anomaly1[weather_extreme_1]);
+          Serial.println(anomaly_1[weather_extreme_1]);
         }
 
         if (debugging == true) {
@@ -459,7 +442,7 @@ void calc_data() {
 
         if (debugging == true) {
           Serial.print(val, HEX);
-          Serial.println(anomaly2[weather_extreme_2]);
+          Serial.println(anomaly_2[weather_extreme_2]);
         }
       }
     }
@@ -687,11 +670,16 @@ void show_forcast_table() {
     Serial.println(region[user_region]);
     Serial.println("High: ");
     for (int k = 0; k < 4; k++) {
-      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_high_values[0][k]] + " Wind Strength: " + windstrength[forecast_high_values[1][k]] + "Bft Day: " + weather[forecast_high_values[2][k]] + " Night: " + weather[forecast_high_values[3][k]] + " Anomaly: " + anomaly1[forecast_high_values[4][k]]  + " Temp: " + forecast_high_values[5][k]  + "C Decoder Status: " + forecast_high_values[6][k]);
+      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_high_values[0][k]] + " Wind Strength: " + windstrength[forecast_high_values[1][k]] + "Bft Day: " + weather[forecast_high_values[2][k]] + " Night: " + weather[forecast_high_values[3][k]] + " Temp: " + forecast_high_values[5][k]  + "C Rain %: " + rain_prop[extreme_values[2][k]] + "Decoder Status: " + forecast_high_values[6][k]);
     }
     Serial.println("Low: ");
     for (int k = 0; k < 4; k++) {
-      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_low_values[0][k]] + " Wind Strength: " + windstrength[forecast_low_values[1][k]] + "Bft Day: " + weather[forecast_low_values[2][k]] + " Night: " + weather[forecast_low_values[3][k]] + " Anomaly: " + anomaly1[forecast_low_values[4][k]]  + " Temp: " + forecast_low_values[5][k]  + "C Decoder Status: " + forecast_low_values[6][k]);
+      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_low_values[0][k]] + " Wind Strength: " + windstrength[forecast_low_values[1][k]] + "Bft Day: " + weather[forecast_low_values[2][k]] + " Night: " + weather[forecast_low_values[3][k]] + " Temp: " + forecast_low_values[5][k]  + "C Rain %: " + rain_prop[extreme_values[2][k]] + "Decoder Status: " + forecast_low_values[6][k]);
+    }
+    for (int k = 0; k < 4; k++) {
+      if (forecast_high_values[4][k] == 1) {//day x: weather Anomaly
+        Serial.println("Day " + String(k + 1) + " Anomaly: " + anomaly_1[forecast_high_values[4][k]] + ": Risk:" + anomaly_1[extreme_values[0][k]] + " Next:" + anomaly_2[extreme_values[1][k]]);
+      }
     }
     Serial.println();
   }
