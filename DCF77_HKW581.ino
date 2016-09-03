@@ -361,7 +361,7 @@ void show_region() {
     }
     Serial.print(" = UTC+" + String(daylight_saving_time) + "h");
     Serial.println();
-    Serial.print("Life Location: ");
+    Serial.print("Life Region: ");
     Serial.println(region[region_code]);
   }
 }
@@ -666,7 +666,7 @@ void show_forcast_table() {
 
   if (debugging == true) {
     Serial.println();
-    Serial.print("My Location: ");
+    Serial.print("My Region: ");
     Serial.println(region[user_region]);
     Serial.println("High: ");
     for (int k = 0; k < 4; k++) {
@@ -676,10 +676,12 @@ void show_forcast_table() {
     for (int k = 0; k < 4; k++) {
       Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_low_values[0][k]] + " Wind Strength: " + windstrength[forecast_low_values[1][k]] + "Bft Day: " + weather[forecast_low_values[2][k]] + " Night: " + weather[forecast_low_values[3][k]] + " Temp: " + forecast_low_values[5][k]  + "C Rain %: " + rain_prop[extreme_values[2][k]] + "Decoder Status: " + forecast_low_values[6][k]);
     }
+    Serial.println("Anomaly: ");
     for (int k = 0; k < 4; k++) {
       if (forecast_high_values[4][k] == 1) {//day x: weather Anomaly
         Serial.println("Day " + String(k + 1) + " Anomaly: " + anomaly_1[forecast_high_values[4][k]] + ": Risk:" + anomaly_1[extreme_values[0][k]] + " Next:" + anomaly_2[extreme_values[1][k]]);
       }
+      Serial.println("Day " + String(k + 1) + " No Anomaly");
     }
     Serial.println();
   }
