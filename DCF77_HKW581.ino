@@ -31,6 +31,7 @@ const char *anomaly2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
 //Version:
 String sw_version = "V0.1";
+boolean debugging = true;
 
 //User Region:
 int region_code;
@@ -114,7 +115,6 @@ void setup() {
   DCF.Start();
   Serial.println(sw_version);
   Serial.println("Waiting for DFC77 Signal.................");
-  Serial.println("It will take at least 2 minutes until a first update can be processed.");
   Serial.print("My Region: ");
   Serial.println(region[user_region]);
   //setTime(13, 02, 00, 31, 12, 2016);
@@ -132,7 +132,7 @@ void loop() {
 
   time_t DCFtime = DCF.getTime(); // Check if new DCF77 time is available
   if (DCFtime != 0)  {
-    Serial.println("Time is updated");
+    if (debugging == true) Serial.println("DCF Time is updated");
     setTime(DCFtime);
   }
 
@@ -141,7 +141,7 @@ void loop() {
     lock = true;
     int result = (minute() + 1) % 3;
     String dcf_bitstream = DCF.getEncWeatherData();
-    Serial.println("Bitstream:" + String(dcf_bitstream));
+    if (debugging == true) Serial.println("Bitstream:" + String(dcf_bitstream));
     collect_data(dcf_bitstream, result); //result can 0=final,2=2.,1=1.packet
 
     if (result == 0 ) {//minute:2,5,8,11........
@@ -239,10 +239,12 @@ void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. pac
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-    for (int k = 0; k < 82; k++) {
-      Serial.print(String(hkw_in[k]));
+    if (debugging == true) {
+      for (int k = 0; k < 82; k++) {
+        Serial.print(String(hkw_in[k]));
+      }
+      Serial.println();
     }
-    Serial.println();
   }
 }
 //----------------------------------------------------------------------------------------------
@@ -262,8 +264,7 @@ void write_data_to_hkw() {
     This you do 82 times for all 82 bits. Once all the data is clocked in the decoding chip calculates the result.
   */
 
-  Serial.println("Write 82  bits to Chip:");
-  Serial.println("Datapackage 1  Datapackage 2  Datapackage 3  Time  Hour  Date  Month  Dow  Year");
+  if (debugging == true) Serial.println("Write 82  bits to Chip:");
 
   digitalWrite(DataIn, LOW);
   digitalWrite(ClockIn, LOW);
@@ -330,122 +331,163 @@ void show_region() {
   //22:00 = 0,  00:59 = 2*60 + 59 = 179
   region_code = region_code / 3;
 
-  Serial.println();
-  if (hour() < 10) {
-    Serial.print("0" + String(hour()) + ":");
-  }
-  else {
-    Serial.print(String(hour()) + ":");
-  }
+  if (debugging == true) {
+    Serial.println();
+    if (hour() < 10) {
+      Serial.print("0" + String(hour()) + ":");
+    }
+    else {
+      Serial.print(String(hour()) + ":");
+    }
 
-  if (minute() < 10) {
-    Serial.print("0" + String(minute()));
+    if (minute() < 10) {
+      Serial.print("0" + String(minute()));
+    }
+    else {
+      Serial.print(String(minute()));
+    }
+    Serial.print("  UTC+" + String(daylight_saving_time));
+    Serial.println();
+    Serial.print("Location: ");
+    Serial.println(region[region_code]);
   }
-  else {
-    Serial.print(String(minute()));
-  }
-  Serial.print("  UTC+" + String(daylight_saving_time));
-  Serial.println();
-  Serial.print("Location: ");
-  Serial.println(region[region_code]);
 }
 //----------------------------------------------------------------------------------------------
 void calc_data() {
 
-  Serial.println("Start:");
-  //+++++++++++++++++++++++++++++++++++++++++++++++++++
-  Serial.print("Winddirection     =   ");
-  Serial.print(meteodata.substring(8, 12));      //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
-  Serial.print(" ");                             //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
+  if (debugging == true) {
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++
+    Serial.print("Winddirection     =   ");
+    Serial.print(meteodata.substring(8, 12));      //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
+    Serial.print(" ");                             //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
+  }
+
   val = string_to_int(8, 12);
   val = reverse_bits (val, 4);
   wind_direction = val;
-  Serial.print(val, HEX);
-  Serial.print(" ");
-  Serial.print(winddirection[val]);
-  Serial.println();
+
+  if (debugging == true) {
+    Serial.print(val, HEX);
+    Serial.print(" ");
+    Serial.print(winddirection[val]);
+    Serial.println();
+  }
   //+++++++++++++++++++++++++++++++++++++++++++++++++++
-  Serial.print("Windstrength      =    ");
-  Serial.print(meteodata.substring(12, 15));
-  Serial.print(" ");
+  if (debugging == true) {
+    Serial.print("Windstrength      =    ");
+    Serial.print(meteodata.substring(12, 15));
+    Serial.print(" ");
+  }
+
   val = string_to_int(12, 15);
   val = reverse_bits (val, 3);
   wind_strength = val;
-  Serial.print(val, HEX);
-  Serial.print(" ");
-  Serial.print(windstrength[val]);
-  Serial.println(" Bft");
+
+  if (debugging == true) {
+    Serial.print(val, HEX);
+    Serial.print(" ");
+    Serial.print(windstrength[val]);
+    Serial.println(" Bft");
+  }
   //+++++++++++++++++++++++++++++++++++++++++++++++++++
-  Serial.print("Day               =   ");
-  Serial.print(meteodata.substring(0, 4));
-  Serial.print(" ");
+  if (debugging == true) {
+    Serial.print("Day               =   ");
+    Serial.print(meteodata.substring(0, 4));
+    Serial.print(" ");
+  }
+
   val = string_to_int(0, 4);
   val = reverse_bits (val, 4);
   day_value = val;
-  Serial.print(val, HEX);
-  Serial.print(" ");
-  Serial.print(weather[val]);
-  Serial.println();
-  //+++++++++++++++++++++++++++++++++++++++++++++++++++
-  Serial.print("Night             =   ");
-  Serial.print(meteodata.substring(4, 8));
-  Serial.print(" ");
-  val = string_to_int(4, 8);
-  val = reverse_bits (val, 4);
-  night_value = val;
-  Serial.print(val, HEX);
-  Serial.print(" ");
-  if (val == 1) {
-    Serial.print("Clear");
-    Serial.println();
-  } else {
+
+  if (debugging == true) {
+    Serial.print(val, HEX);
+    Serial.print(" ");
     Serial.print(weather[val]);
     Serial.println();
   }
   //+++++++++++++++++++++++++++++++++++++++++++++++++++
-  Serial.print("Weather Anomality =      ");
-  Serial.print(meteodata.substring(15, 16));
-  Serial.print(" ");
-  val = string_to_int(15, 16);
-  weather_anomalie = val;
-  Serial.print(val, HEX);
-  if (val == 1) {
-    Serial.println(" Yes");
-  } else {
-    Serial.println(" No");
+  if (debugging == true) {
+    Serial.print("Night             =   ");
+    Serial.print(meteodata.substring(4, 8));
+    Serial.print(" ");
+  }
+
+  val = string_to_int(4, 8);
+  val = reverse_bits (val, 4);
+  night_value = val;
+
+  if (debugging == true) {
+    Serial.print(val, HEX);
+    Serial.print(" ");
+    if (val == 1) {
+      Serial.print("Clear");
+      Serial.println();
+    }
+    else {
+      Serial.print(weather[val]);
+      Serial.println();
+    }
   }
   //+++++++++++++++++++++++++++++++++++++++++++++++++++
-  Serial.print("Temperature       = ");
-  Serial.print(meteodata.substring(16, 22));
-  Serial.print(" ");
+  if (debugging == true) {
+    Serial.print("Weather Anomality =      ");
+    Serial.print(meteodata.substring(15, 16));
+    Serial.print(" ");
+  }
+
+  val = string_to_int(15, 16);
+  weather_anomalie = val;
+
+  if (debugging == true) {
+    Serial.print(val, HEX);
+    if (val == 1) {
+      Serial.println(" Yes");
+    }
+    else {
+      Serial.println(" No");
+    }
+  }
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++
+  if (debugging == true) {
+    Serial.print("Temperature       = ");
+    Serial.print(meteodata.substring(16, 22));
+    Serial.print(" ");
+  }
+
   val = string_to_int(16, 22);
   val = reverse_bits (val, 6);
   temperatur = val - 22;
-  Serial.print("0x");
-  Serial.print(val, HEX);
-  Serial.print(" ");
-  if (val == 0) {
-    Serial.print("<-21 ");
-    Serial.print("C");
+
+  if (debugging == true) {
+    Serial.print("0x");
+    Serial.print(val, HEX);
+    Serial.print(" ");
+    if (val == 0) {
+      Serial.print("<-21 ");
+      Serial.print("C");
+    }
+    if (val == 63) {
+      Serial.print (">40 ");
+      Serial.print("C");
+    }
+    if ((val != 0) & (val != 63)) {
+      Serial.print(val - 22, DEC);
+      Serial.print("C");
+    }
+    Serial.println();
   }
-  if (val == 63) {
-    Serial.print (">40 ");
-    Serial.print("C");
-  }
-  if ((val != 0) & (val != 63)) {
-    Serial.print(val - 22, DEC);
-    Serial.print("C");
-  }
-  Serial.println();
   //+++++++++++++++++++++++++++++++++++++++++++++++++++
-  Serial.print("Decoder status    =     ");
-  Serial.print(meteodata.substring(22, 24));
+
+  if (debugging == true)   Serial.print("Decoder status    =     ");
+  if (debugging == true)   Serial.print(meteodata.substring(22, 24));
+
   if (meteodata.substring(22, 24) == "10") {
     decoder_status = 10;
-    Serial.println (" OK");
+    if (debugging == true) Serial.println (" OK");
   } else {
     decoder_status = 0;
-    Serial.println (" NOT OK");
+    if (debugging == true) Serial.println (" NOT OK");
   }
 }
 //---------------------------------------------------------------------
@@ -518,16 +560,18 @@ void fill_forecast_table() {
 //---------------------------------------------------------------------
 void show_forcast_table() {
 
-  Serial.println();
-  Serial.print("Location: ");
-  Serial.println(region[user_region]);
-  Serial.println("High: ");
-  for (int k = 0; k < 4; k++) {
-    Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_high_values[0][k]] + " Wind Strength: " + windstrength[forecast_high_values[1][k]] + " Day: " + weather[forecast_high_values[2][k]] + " Night: " + weather[forecast_high_values[3][k]] + " Anomalie: " + anomaly1[forecast_high_values[4][k]]  + " Temp: " + forecast_high_values[5][k]  + "C Decoder Status: " + forecast_high_values[6][k]);
-  }
-  Serial.println("Low: ");
-  for (int k = 0; k < 4; k++) {
-    Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_low_values[0][k]] + " Wind Strength: " + windstrength[forecast_low_values[1][k]] + " Day: " + weather[forecast_low_values[2][k]] + " Night: " + weather[forecast_low_values[3][k]] + " Anomalie: " + anomaly1[forecast_low_values[4][k]]  + " Temp: " + forecast_low_values[5][k]  + "C Decoder Status: " + forecast_low_values[6][k]);
+  if (debugging == true) {
+    Serial.println();
+    Serial.print("Location: ");
+    Serial.println(region[user_region]);
+    Serial.println("High: ");
+    for (int k = 0; k < 4; k++) {
+      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_high_values[0][k]] + " Wind Strength: " + windstrength[forecast_high_values[1][k]] + " Day: " + weather[forecast_high_values[2][k]] + " Night: " + weather[forecast_high_values[3][k]] + " Anomalie: " + anomaly1[forecast_high_values[4][k]]  + " Temp: " + forecast_high_values[5][k]  + "C Decoder Status: " + forecast_high_values[6][k]);
+    }
+    Serial.println("Low: ");
+    for (int k = 0; k < 4; k++) {
+      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_low_values[0][k]] + " Wind Strength: " + windstrength[forecast_low_values[1][k]] + " Day: " + weather[forecast_low_values[2][k]] + " Night: " + weather[forecast_low_values[3][k]] + " Anomalie: " + anomaly1[forecast_low_values[4][k]]  + " Temp: " + forecast_low_values[5][k]  + "C Decoder Status: " + forecast_low_values[6][k]);
+    }
   }
 }
 //---------------------------------------------------------------------
