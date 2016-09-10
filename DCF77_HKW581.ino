@@ -627,6 +627,7 @@ void fill_forecast_table() {
     high_value = false;
   }
   if (debugging == true) {
+    Serial.print("Schedule          =    ");
     Serial.print(String(day_x + 1) + ".Day ");
     if (high_value == true) Serial.print("Hoechstwerte");
     if (high_value == false) Serial.print("Tiefstwerte");
