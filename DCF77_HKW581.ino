@@ -97,8 +97,8 @@ byte hkw_out[24] {0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0,
 //Example:
 //minute 0: first 14 bits
 //minute 1: first 14 bits
-//minute 2: first 14 bits                      & time & hour  & date & month & dow & year
-//01011010010110 11100011000111 00001111110011 10011010 01000100 11100 011     00101000
+//minute 2: first 14 bits                      & time   & hour   & date & month & dow & year
+//01011010010110 11100011000111 00001111110011 10011010 01000100 11100  011     00101000
 //01000110 00001000 11001110
 
 //HKW581 Pins:     chip needs 40 seconds to warm up
@@ -131,7 +131,7 @@ void setup() {
   //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
   //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
 
-  meteodata = "111001101100011010110110"; //Test: 24bits: Snow, Heavy rain, SO, 9-Bf, No, 23⁰c
+  //meteodata = "111001101100011010110110"; //Test: 24bits: Snow, Heavy rain, SO, 9-Bf, No, 23⁰c
 }
 //----------------------------------------------------------------------------------------------
 void loop() {
@@ -142,8 +142,11 @@ void loop() {
 
   time_t DCFtime = DCF.getTime(); // Check if new DCF77 time is available
   if (DCFtime != 0)  {
-    if (debugging == true) Serial.println("DCF Time is updated");
     setTime(DCFtime);
+    if (debugging == true) {
+      Serial.print("DCF Time is updated: ");
+      Serial.println(String(hour()) + ":" + String(minute()) + ":" + String(second()));
+    }
     time_updated = true;
   }
 
@@ -153,16 +156,19 @@ void loop() {
       lock = true;
       int result = (minute() + 1) % 3;
       String dcf_bitstream = DCF.getEncWeatherData();
-      if (debugging == true) Serial.println("Bitstream:" + String(dcf_bitstream));
+      if (debugging == true) {
+        Serial.print(String(hour()) + ":" + String(minute()) + ":" + String(second()) + " ");
+        Serial.print("Bitstream:" + String(dcf_bitstream));
+      }
       collect_data(dcf_bitstream, result); //result can 0=final,2=2.,1=1.packet
 
       if (result == 0 ) {//minute:2,5,8,11........
-        //write_data_to_hkw(); // input > hkw_in[]
-        //read_data_from_hkw(); // result > meteodata
+        write_data_to_hkw(); // input > hkw_in[]
+        read_data_from_hkw(); // result > meteodata
         show_region();
         calc_data();
         fill_forecast_table();
-        show_forcast_table();
+        //show_forcast_table();
       }
     }
 
@@ -172,8 +178,9 @@ void loop() {
   }
 }
 //----------------------------------------------------------------------------------------------
-void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. packet
+void collect_data(String input, int packet) { //packet can 0=final,1=2.,2=1. packet
 
+  if (debugging == true) Serial.println(" Packet:" + String(packet));
   int bit_count;
 
   if (input.substring(16, 18) == "01") daylight_saving_time = 1;//MEZ
@@ -195,65 +202,69 @@ void collect_data(String input, int packet) { //packet can 0=final,2=2.,1=1. pac
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-  }
-
-  if (packet == 0) { //final
-
-    bit_count = 28;
-
-    for (int k = 0; k < 14; k++) {
-      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
-      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
-      bit_count++;
-    }
-
-    hkw_in[bit_count] = 0; //leading zero for minute
-    bit_count++;
-
+    //time > Key
+    bit_count = 42;
     for (int k = 20; k < 27; k++) {//minute bit 21-27 > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-
-    hkw_in[bit_count] = 0;//leading zeros for hour
+    hkw_in[bit_count] = 0; //leading zero for minute
     bit_count++;
-    hkw_in[bit_count] = 0;
-    bit_count++;
-
+    //--------------------------------
     for (int k = 28; k < 34; k++) {//hour bit 29-34  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
-
-    hkw_in[bit_count] = 0;//leading zeros for day
+    hkw_in[bit_count] = 0;//leading zeros for hour
     bit_count++;
     hkw_in[bit_count] = 0;
     bit_count++;
-
+    //--------------------------------
     for (int k = 35; k < 41; k++) {//day bit 36-41  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
+    hkw_in[bit_count] = 0;//leading zeros for day
+    bit_count++;
+    hkw_in[bit_count] = 0;
+    bit_count++;
+    //--------------------------------
     for (int k = 44; k < 49; k++) {//month bit 45-49  > gesamt:5bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
+    //--------------------------------
     for (int k = 41; k < 44; k++) {//dow 42-44  > gesamt:3bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
+    //--------------------------------
     for (int k = 49; k < 57; k++) {//year 50-57  > gesamt:8bits
       if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
       if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
       bit_count++;
     }
+    //--------------------------------
+  }
+
+  if (packet == 0) { //3.packet > final
+
+    bit_count = 28;
+    for (int k = 0; k < 14; k++) {
+      if (input.substring(k, k + 1) == "0")hkw_in[bit_count] = 0;
+      if (input.substring(k, k + 1) == "1")hkw_in[bit_count] = 1;
+      bit_count++;
+    }
+    //---------------------------------------
     if (debugging == true) {
+      Serial.println();
       for (int k = 0; k < 82; k++) {
+        if (k == 14 || k == 28 || k == 42 || k == 50 || k == 58 || k == 66 || k == 71 || k == 74) Serial.print("-");//markers
         Serial.print(String(hkw_in[k]));
       }
       Serial.println();
@@ -277,7 +288,7 @@ void write_data_to_hkw() {
     This you do 82 times for all 82 bits. Once all the data is clocked in the decoding chip calculates the result.
   */
 
-  if (debugging == true) Serial.println("Write 82  bits to Chip:");
+  if (debugging == true) Serial.println("Write 82  bits to Chip");
 
   digitalWrite(DataIn, LOW);
   digitalWrite(ClockIn, LOW);
@@ -315,6 +326,7 @@ void read_data_from_hkw() {
     You set the first bit on DataIn, and then pulse the ClockIn line.
     This you do 82 times for all 82 bits. Once all the data is clocked in the decoding chip calculates the result.
   */
+  meteodata = "";
 
   for (int k = 23; k > -1; k--) { //read and flip bit stream
 
@@ -332,6 +344,7 @@ void read_data_from_hkw() {
 
     digitalWrite(ClockIn, LOW);
   }
+  if (debugging == true) Serial.println("Read Meteodata:" + meteodata);
 }
 //----------------------------------------------------------------------------------------------
 void show_region() {
@@ -627,7 +640,7 @@ void fill_forecast_table() {
     high_value = false;
   }
   if (debugging == true) {
-    Serial.print("Schedule          =    ");
+    Serial.print("Schedule          =        ");
     Serial.print(String(day_x + 1) + ".Day ");
     if (high_value == true) Serial.print("Hoechstwerte");
     if (high_value == false) Serial.print("Tiefstwerte");
