@@ -11,17 +11,17 @@ time_t time;
 DCF77 DCF = DCF77(DCF_PIN, DCF_INTERRUPT);
 
 //60 Region,Cities:
-const char *region[]  { "F Bordeaux", "F la Rochelle" , "F Paris", "F Brest", "F Clermont-Ferrand", "F Beziers", "B Bruxelles", "F Dijon", "F Marseille", "F Lyon", "F Grenoble", "CH La Chaux de Fonds"
-  , "D Frankfurt am Main", "D Trier", "D Duisburg", "GB Swansea", "GB Manchester", "F le Havre", "GB London", "D Bremerhaven", "DK Herning", "DK Arhus", "D Hannover", "DK Copenhagen"
+const char *region[]  { "F Bordeaux", "F la Rochelle" , "F Paris", "F Brest", "F Clermont", "F Beziers", "B Bruxelles", "F Dijon", "F Marseille", "F Lyon", "F Grenoble", "CH La Chaux"
+  , "D Frankfurt/M", "D Trier", "D Duisburg", "GB Swansea", "GB Manchester", "F le Havre", "GB London", "D Bremerhaven", "DK Herning", "DK Arhus", "D Hannover", "DK Copenhagen"
   , "D Rostock" , "D Ingolstadt", "D Muenchen", "I Bolzano", "D Nuernberg", "D Leipzig", "D Erfurt", "CH Lausanne", "CH Zuerich", "CH Adelboden", "CH Sion", "CH Glarus", "CH Davos"
-  , "D Kassel", "CH Locarno", "I Sestriere" , "I Milano", "I Roma", "NL Amsterdam", "I Genova", "I Venezia", "D Strasbourg", "A Klagenfurt", "A Innsbruck", "A Salzburg", "A/SK Wien/Bratislava"
-  ,  "CZ Praha", "CZ Decin", "D Berlin", "S Gothenburg" , "S Stockholm", "S Kalmar", "S Joenkoeping", "D Donaueschingen", "N Oslo", "D Stuttgart" , "I Napoli", "I Ancona", "I Bari"
-  , "H Budapest", "E Madrid", "E Bilbao", "I Palermo", "E Palma de Mallorca" , "E Valencia", "E Barcelona", "AND Andorra", "E Sevilla", "P Lissabon", "I Sassari", "E Gijon", "IRL Galway"
+  , "D Kassel", "CH Locarno", "I Sestriere" , "I Milano", "I Roma", "NL Amsterdam", "I Genova", "I Venezia", "D Strasbourg", "A Klagenfurt", "A Innsbruck", "A Salzburg", "A/SK Wien"
+  ,  "CZ Praha", "CZ Decin", "D Berlin", "S Gothenburg" , "S Stockholm", "S Kalmar", "S Joenkoeping", "D Donauechingen", "N Oslo", "D Stuttgart" , "I Napoli", "I Ancona", "I Bari"
+  , "H Budapest", "E Madrid", "E Bilbao", "I Palermo", "E Palma" , "E Valencia", "E Barcelona", "AND Andorra", "E Sevilla", "P Lissabon", "I Sassari", "E Gijon", "IRL Galway"
   , "IRL Dublin", "GB Glasgow", "N Stavanger", "N Trondheim", "S Sundsvall", "PL Gdansk" , "PL Warszawa", "PL Krakow", "S Umea", "S Oestersund", "CH Samedan", "HR Zagreb", "CH Zermatt", "HR Split"
 };
-const char *weather[]  {  "Reserved", "Sunny", "Partly clouded", "Mostly clouded", "Overcast", "Heat storms", "Heavy rain", "Snow", "Fog", "Sleet", "Rain showers", "Light rain" , "Snow showers",  "Frontal storms", "Stratus cloud", "Sleet storms"};
-const char *heavyweather[]  {  "None", "Heavy Weather 24 hrs.", "Heavy weather Day", "Heavy weather Night", "Storm 24hrs.", "Storm Day", "Storm Night",
-  "Wind gusts Day", "Wind gusts Night", "Icy rain morning", "Icy rain evening", "Icy rain night", "Fine dust", "Ozon", "Radiation", "High water"
+const char *weather[]  {  "Reserved", "Sunny", "Partly Clouded", "Mostly Clouded", "Overcast", "Heat Storms", "Heavy Rain", "Snow", "Fog", "Sleet", "Rain Showers", "Light Rain" , "Snow Showers",  "Frontal Storms", "Stratus Cloud", "Sleet Storms"};
+const char *heavyweather[]  {  "None", "Heavy Weather 24 hrs.", "Heavy Weather Day", "Heavy Weather Night", "Storm 24hrs.", "Storm Day", "Storm Night",
+  "Wind Gusts Day", "Wind Gusts Night", "Icy Rain Morning", "Icy Rain Evening", "Icy Rain Night", "Fine Dust", "Ozon", "Radiation", "High Water"
 };
 const char *rain_prop[]  {"0 %", "15 %", "30 %", "45 %", "60 %", "75 %", "90 %", "100 %"};
 const char *winddirection[]  { "N", "NO", "O", "SO", "S", "SW", "W", "NW", "Changeable", "Foen", "Biese N/O", "Mistral N", "Scirocco S", "Tramont W", "Reserved", "Reserved"};
@@ -30,8 +30,9 @@ const char *anomaly_1[]  {"No ", "1 ", "2 ", "3 "};
 const char *anomaly_2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
 //Version:
-String sw_version = "V0.1";
+String sw_version = "V0.2";
 boolean debugging = true;
+boolean vfd_display = true;
 boolean time_updated = false;
 
 //User Region:
@@ -122,10 +123,13 @@ void setup() {
   digitalWrite(ClockIn, LOW);
 
   Serial.begin(9600);
+  Serial1.begin(9600);
+  Serial1.write(0x1B);//init vfd
+  Serial1.write(0x40);//init vfd
   DCF.Start();
   Serial.println(sw_version);
   Serial.println("Waiting for DFC77 Signal.................");
-  Serial.print("My Region: ");
+  Serial.print("My Region: " + String(user_region) + " ");
   Serial.println(region[user_region]);
   //setTime(13, 02, 00, 31, 12, 2016);
   //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
@@ -168,7 +172,7 @@ void loop() {
         show_region();
         calc_data();
         fill_forecast_table();
-        //show_forcast_table();
+        show_forcast_table();
       }
     }
 
@@ -357,26 +361,25 @@ void show_region() {
   //22:00 = 0,  00:59 = 2*60 + 59 = 179
   region_code = region_code / 3;
 
-  if (debugging == true) {
-    Serial.println();
-    if (hour() < 10) {
-      Serial.print("0" + String(hour()) + ":");
-    }
-    else {
-      Serial.print(String(hour()) + ":");
-    }
-
-    if (minute() < 10) {
-      Serial.print("0" + String(minute()));
-    }
-    else {
-      Serial.print(String(minute()));
-    }
-    Serial.print(" = UTC+" + String(daylight_saving_time) + "h");
-    Serial.println();
-    Serial.print("Life Region: ");
-    Serial.println(region[region_code]);
+  Serial.println();
+  if (hour() < 10) {
+    Serial.print("0" + String(hour()) + ":");
   }
+  else {
+    Serial.print(String(hour()) + ":");
+  }
+
+  if (minute() < 10) {
+    Serial.print("0" + String(minute()));
+  }
+  else {
+    Serial.print(String(minute()));
+  }
+  Serial.print(" = UTC+" + String(daylight_saving_time) + "h");
+  Serial.println();
+  Serial.print("Life Region: " + String(region_code) + " ");
+  Serial.println(region[region_code]);
+
 }
 //----------------------------------------------------------------------------------------------
 void calc_data() {
@@ -408,6 +411,7 @@ void calc_data() {
 
       if (debugging == true) {
         Serial.print(val, HEX);
+        Serial.print(" ");
         Serial.print(rain_prop[rain_propability]);
         Serial.println();
       }
@@ -681,13 +685,41 @@ void fill_forecast_table() {
       }
     }
   }
+  //-----------------------------------
+
+  //  wind_direction;
+  //  weather_extreme_1;
+  //  weather_extreme_2;
+  //  wind_strength;
+  //  rain_propability;
+  //  day_value;
+  //  night_value;
+  //  weather_anomaly;
+  //  temperatur;
+  //  decoder_status;
+
+  if (vfd_display == true) {
+    String high_low;
+    if (high_value == true) high_low = " hi";
+    if (high_value == false) high_low = " lo";
+    String vfd_text_top = String(region[region_code]) + "Day " + String(day_x) + high_low;
+    Serial1.write(0x0C);//Clear display
+    Serial1.write(0x0B);//home position
+    Serial1.print(vfd_text_top);
+    if (decoder_status == 10) {
+      String vfd_text_down = String(temperatur) + "C " + String(winddirection[wind_direction]) + " " + String(windstrength[wind_strength]) + "Bft";
+      Serial1.write(0x0A);//move cursor down
+      Serial1.write(0x0D);//move cursor left end
+      Serial1.print(vfd_text_down);
+    }
+  }
 }
 //---------------------------------------------------------------------
 void show_forcast_table() {
 
   if (debugging == true) {
     Serial.println();
-    Serial.print("My Region: ");
+    Serial.print("My Region: " + String(user_region) + " ");
     Serial.println(region[user_region]);
     Serial.println("High: ");
     for (int k = 0; k < 4; k++) {
@@ -706,6 +738,15 @@ void show_forcast_table() {
     }
     Serial.println();
   }
+
+  //  if (vfd_display == true) {
+  //    Serial1.write(0x0C);//Clear display
+  //    Serial1.write(0x0B);//home position
+
+  //    Serial1.write(0x0A);//move cursor down
+  //    Serial1.write(0x0D);//move cursor left end
+
+  //  }
 }
 //---------------------------------------------------------------------
 int string_to_int(int a, int b) {           //   substring.meteodata > int val
