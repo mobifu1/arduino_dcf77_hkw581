@@ -607,6 +607,7 @@ void fill_forecast_table() {
 
   byte day_x = 0;
   boolean high_value = false;
+  boolean propagation = false;
   int utc_hour_int = hour();
   utc_hour_int -= daylight_saving_time;
   if (utc_hour_int < 0)utc_hour_int += 24;
@@ -642,15 +643,20 @@ void fill_forecast_table() {
   if (utc_hour_int   >= 19  && utc_hour_int   <= 21 ) { //19:02-22:59 > 4.day Wetterprognose & Temperatur
     day_x = 3;
     high_value = false;
+    propagation = true;
   }
   if (debugging == true) {
     Serial.print("Schedule          =        ");
     Serial.print(String(day_x + 1) + ".Day ");
-    if (high_value == true) Serial.print("Hoechstwerte");
-    if (high_value == false) Serial.print("Tiefstwerte");
-    Serial.println();
+    if (propagation == false) {
+      if (high_value == true) Serial.print("Hoechstwerte");
+      if (high_value == false) Serial.print("Tiefstwerte");
+      Serial.println();
+    }
+    else {
+      Serial.print("Wetterprognose & Temperatur");
+    }
   }
-
 
   if (decoder_status == 10) {
     if (region_code == user_region) {
@@ -700,9 +706,10 @@ void fill_forecast_table() {
 
   if (vfd_display == true) {
     String high_low;
-    if (high_value == true) high_low = " hi";
-    if (high_value == false) high_low = " lo";
-    String vfd_text_top = String(region[region_code]) + "Day " + String(day_x) + high_low;
+    if (high_value == true) high_low = " Hi";
+    if (high_value == false) high_low = " Ho";
+    if (propagation == true) high_low = " Pg";
+    String vfd_text_top = String(region[region_code]) + "Day " + String(day_x + 1) + high_low;
     Serial1.write(0x0C);//Clear display
     Serial1.write(0x0B);//home position
     Serial1.print(vfd_text_top);
