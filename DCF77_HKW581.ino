@@ -131,6 +131,13 @@ void setup() {
   Serial.println("Waiting for DFC77 Signal.................");
   Serial.print("My Region: " + String(user_region) + " ");
   Serial.println(region[user_region]);
+  Serial1.write(0x0C);//Clear display
+  Serial1.write(0x0B);//home position
+  Serial1.print("DCF77 " + sw_version);
+  Serial1.write(0x0A);//move cursor down
+  Serial1.write(0x0D);//move cursor left end
+  Serial1.print("Waiting for Signal..");
+
   //setTime(13, 02, 00, 31, 12, 2016);
   //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
   //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
@@ -706,15 +713,23 @@ void fill_forecast_table() {
 
   if (vfd_display == true) {
     String high_low;
-    if (high_value == true) high_low = " Hi";
-    if (high_value == false) high_low = " Ho";
-    if (propagation == true) high_low = " Pg";
-    String vfd_text_top = String(region[region_code]) + "Day " + String(day_x + 1) + high_low;
+    if (high_value == true) high_low = " H";
+    if (high_value == false) high_low = " T";
+    if (propagation == true) high_low = " P";
+    String vfd_text_top = String(region[region_code]) + " Day" + String(day_x + 1) + high_low;
+    int len = vfd_text_top.length();
+    if (len > 20) {
+      vfd_text_top = vfd_text_top.substring(0, 20);
+    }
     Serial1.write(0x0C);//Clear display
     Serial1.write(0x0B);//home position
     Serial1.print(vfd_text_top);
     if (decoder_status == 10) {
       String vfd_text_down = String(temperatur) + "C " + String(winddirection[wind_direction]) + " " + String(windstrength[wind_strength]) + "Bft";
+      len = vfd_text_down.length();
+      if (len > 20) {
+        vfd_text_down = vfd_text_down.substring(0, 20);
+      }
       Serial1.write(0x0A);//move cursor down
       Serial1.write(0x0D);//move cursor left end
       Serial1.print(vfd_text_down);
