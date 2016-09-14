@@ -2,7 +2,10 @@
 
 #include "DCF77.h"
 #include "TimeLib.h"
+#include <TimerOne.h>
 
+
+#define microseconds_1 3000   //Timer1
 #define led 13
 #define DCF_PIN 2           // Connection pin to DCF 77 device
 #define DCF_INTERRUPT 0    // Interrupt number associated with pin
@@ -30,10 +33,14 @@ const char *anomaly_1[]  {"No ", "1 ", "2 ", "3 "};
 const char *anomaly_2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
 
 //Version:
-String sw_version = "V0.2";
-boolean debugging = true;
+String sw_version = "V0.3";
+boolean debugging = false;
 boolean vfd_display = true;
 boolean time_updated = false;
+int vfd_counter = 0;
+int vfd_counter_2 = 0;
+int y = 0;
+boolean timer1_event = false;
 
 //User Region:
 int region_code;
@@ -112,6 +119,8 @@ byte hkw_out[24] {0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0,
 //----------------------------------------------------------------------------------------------
 void setup() {
 
+  Timer1.initialize(microseconds_1);
+  Timer1.attachInterrupt(timer1_subroutine);
   pinMode(led, OUTPUT);
 
   pinMode(DataIn, OUTPUT);
@@ -131,6 +140,7 @@ void setup() {
   Serial.println("Waiting for DFC77 Signal.................");
   Serial.print("My Region: " + String(user_region) + " ");
   Serial.println(region[user_region]);
+
   Serial1.write(0x0C);//Clear display
   Serial1.write(0x0B);//home position
   Serial1.print("DCF77 " + sw_version);
@@ -147,6 +157,11 @@ void setup() {
 //----------------------------------------------------------------------------------------------
 void loop() {
 
+  if (timer1_event == true) {
+    timer1_event = false;
+    show_forecast_vfd();
+  }
+
   boolean val = digitalRead(DCF_PIN);
   if (val == LOW) digitalWrite(led, LOW);
   if (val == HIGH) digitalWrite(led, HIGH);
@@ -162,6 +177,7 @@ void loop() {
   }
 
   if (time_updated == true) {
+
     if (second() == 59 && lock == false) {
 
       lock = true;
@@ -711,30 +727,36 @@ void fill_forecast_table() {
   //  temperatur;
   //  decoder_status;
 
-  if (vfd_display == true) {
-    String high_low;
-    if (high_value == true) high_low = " H";
-    if (high_value == false) high_low = " T";
-    if (propagation == true) high_low = " P";
-    String vfd_text_top = String(region[region_code]) + " Day" + String(day_x + 1) + high_low;
-    int len = vfd_text_top.length();
-    if (len > 20) {
-      vfd_text_top = vfd_text_top.substring(0, 20);
-    }
-    Serial1.write(0x0C);//Clear display
-    Serial1.write(0x0B);//home position
-    Serial1.print(vfd_text_top);
-    if (decoder_status == 10) {
-      String vfd_text_down = String(temperatur) + "C " + String(winddirection[wind_direction]) + " " + String(windstrength[wind_strength]) + "Bft";
-      len = vfd_text_down.length();
-      if (len > 20) {
-        vfd_text_down = vfd_text_down.substring(0, 20);
-      }
-      Serial1.write(0x0A);//move cursor down
-      Serial1.write(0x0D);//move cursor left end
-      Serial1.print(vfd_text_down);
-    }
-  }
+  //  if (vfd_display == true) {
+  //    String high_low;
+  //    if (high_value == true) high_low = " H";
+  //    if (high_value == false) high_low = " T";
+  //    if (propagation == true) high_low = " P";
+  //    String vfd_text_top = String(region[region_code]) + " Day" + String(day_x + 1) + high_low;
+  //    int len = vfd_text_top.length();
+  //    if (len > 20) {
+  //      vfd_text_top = vfd_text_top.substring(0, 20);
+  //    }
+  //    delay(10);
+  //    Serial1.write(0x0C);//Clear display
+  //    delay(10);
+  //    Serial1.write(0x0B);//home position
+  //    delay(10);
+  //    Serial1.print(vfd_text_top);
+  //    if (decoder_status == 10) {
+  //      String vfd_text_down = String(temperatur) + "C " + String(windstrength[wind_strength]) + "Bft " + String(winddirection[wind_direction]);
+  //      len = vfd_text_down.length();
+  //      if (len > 20) {
+  //        vfd_text_down = vfd_text_down.substring(0, 20);
+  //      }
+  //      delay(10);
+  //      Serial1.write(0x0A);//move cursor down
+  //      delay(10);
+  //      Serial1.write(0x0D);//move cursor left end
+  //      delay(10);
+  //      Serial1.print(vfd_text_down);
+  //    }
+  //  }
 }
 //---------------------------------------------------------------------
 void show_forcast_table() {
@@ -760,15 +782,71 @@ void show_forcast_table() {
     }
     Serial.println();
   }
+}
+//---------------------------------------------------------------------
+void show_forecast_vfd() {
 
-  //  if (vfd_display == true) {
-  //    Serial1.write(0x0C);//Clear display
-  //    Serial1.write(0x0B);//home position
+  if (vfd_display == true) {
+    vfd_counter++;
+    vfd_counter_2++;
 
-  //    Serial1.write(0x0A);//move cursor down
-  //    Serial1.write(0x0D);//move cursor left end
+    if (vfd_counter > 15 ) vfd_counter = 0;
+    if (vfd_counter == 0 || vfd_counter == 4 || vfd_counter == 8 || vfd_counter == 12) vfd_counter_2 = 0;
 
-  //  }
+    if (vfd_counter >= 0 && vfd_counter <= 7) {//Hoechstwerte
+
+      delay(10);
+      Serial1.write(0x0C);//Clear display
+      delay(10);
+      Serial1.write(0x0B);//home position
+      delay(10);
+      Serial1.print(String(region[user_region]) + " Day " + String(vfd_counter_2 + 1) + " H");
+
+      if (forecast_high_values[6][vfd_counter_2] == 10) { //decoder status
+        delay(10);
+        Serial1.write(0x0A);//move cursor down
+        delay(10);
+        Serial1.write(0x0D);//move cursor left end
+        if (vfd_counter >= 0 && vfd_counter <= 3) {
+          String vfd_text_down = String(forecast_high_values[5][vfd_counter_2]) + "C " + String(windstrength[forecast_high_values[1][vfd_counter_2]]) + "Bft " + String(winddirection[forecast_high_values[0][vfd_counter_2]]);
+          delay(10);
+          Serial1.print(vfd_text_down);
+        }
+        if (vfd_counter >= 4 && vfd_counter <= 7) {
+          String vfd_text_down = String(weather[forecast_high_values[2][vfd_counter_2]]) + " N " + String(weather[forecast_high_values[3][vfd_counter_2]]) + " R " + String(rain_prop[extreme_values[2][vfd_counter_2]]);
+          delay(10);
+          Serial1.print(vfd_text_down);
+        }
+      }
+    }
+    //---------------------------------------------
+    if (vfd_counter >= 8 && vfd_counter <= 15 ) { //Tiefstwerte
+
+      delay(10);
+      Serial1.write(0x0C);//Clear display
+      delay(10);
+      Serial1.write(0x0B);//home position
+      delay(10);
+      Serial1.print(String(region[user_region]) + " Day " + String(vfd_counter_2 + 1) + " T");
+
+      if (forecast_low_values[6][vfd_counter_2] == 10) { //decoder status
+        delay(10);
+        Serial1.write(0x0A);//move cursor down
+        delay(10);
+        Serial1.write(0x0D);//move cursor left end
+        if (vfd_counter >= 8 && vfd_counter <= 11 ) {
+          String vfd_text_down = String(forecast_low_values[5][vfd_counter_2]) + "C " + String(windstrength[forecast_low_values[1][vfd_counter_2]]) + "Bft " + String(winddirection[forecast_low_values[0][vfd_counter_2]]);
+          delay(10);
+          Serial1.print(vfd_text_down);
+        }
+        if (vfd_counter >= 12 && vfd_counter <= 15 ) {
+          String vfd_text_down = String(weather[forecast_low_values[2][vfd_counter_2]]) + " N " + String(weather[forecast_low_values[3][vfd_counter_2]]) + " R " + String(rain_prop[extreme_values[2][vfd_counter_2]]);
+          delay(10);
+          Serial1.print(vfd_text_down);
+        }
+      }
+    }
+  }
 }
 //---------------------------------------------------------------------
 int string_to_int(int a, int b) {           //   substring.meteodata > int val
@@ -796,3 +874,10 @@ int reverse_bits(int x, int z)     // bit reverse int val length z   (last to fi
   return y;
 }
 //---------------------------------------------------------------------
+void timer1_subroutine(void) {
+  y++;
+  if (y > 2000) { // 9sec
+    timer1_event = true;
+    y = 0;
+  }
+}
