@@ -33,7 +33,7 @@ const char *anomaly_1[]  {"No", "1", "2", "3"};
 const char *anomaly_2[]  {"0-2 h", "2-4 h", "5-6 h", "7-8 h"};
 
 //Version:
-String sw_version = "V0.3";
+String sw_version = "V0.4";
 boolean debugging = false;
 boolean vfd_display = true;
 boolean time_updated = false;
@@ -827,7 +827,6 @@ void show_forecast_vfd() {
         send_text_to_vfd(vfd_text);
       }
 
-
       if (vfd_counter == 1 || vfd_counter == 4 || vfd_counter == 7 || vfd_counter == 10) {
         if (forecast_high_values[6][day_counter] == 10) { //decoder status
           String vfd_text = String(forecast_high_values[5][day_counter]) + "C " + String(windstrength[forecast_high_values[1][day_counter]]) + "Bft " + String(winddirection[forecast_high_values[0][day_counter]]) + "+";
@@ -868,7 +867,6 @@ void show_forecast_vfd() {
         send_text_to_vfd(vfd_text);
       }
 
-
       if (vfd_counter == 13 || vfd_counter == 16 || vfd_counter == 19 || vfd_counter == 22) {
         if (forecast_low_values[6][day_counter] == 10) { //decoder status
           String vfd_text = String(forecast_low_values[5][day_counter]) + "C " + String(windstrength[forecast_low_values[1][day_counter]]) + "Bft " + String(winddirection[forecast_low_values[0][day_counter]]) + "+";
@@ -901,12 +899,11 @@ void show_forecast_vfd() {
         String area = String(region[user_region]);
         len = area.length();
         area = area.substring(3, len);
-        String vfd_text = area + " Day " + String(day_counter + 1) + " Anom";
+        String vfd_text = area + " Tag " + String(day_counter + 1) + " Anom";
         len = vfd_text.length();
         if (len > 20) vfd_text = vfd_text.substring(0, 20);
         send_text_to_vfd(vfd_text);
       }
-
 
       if (vfd_counter == 25 || vfd_counter == 27 || vfd_counter == 29 || vfd_counter == 31) {
         if (forecast_low_values[6][day_counter] == 10) { //decoder status
