@@ -14,13 +14,13 @@ time_t time;
 DCF77 DCF = DCF77(DCF_PIN, DCF_INTERRUPT);
 
 //60 Region,Cities:
-const char *region[]  { "F Bordeaux", "F la Rochelle" , "F Paris", "F Brest", "F Clermont", "F Beziers", "B Bruxelles", "F Dijon", "F Marseille", "F Lyon", "F Grenoble", "CH La Chaux"
-  , "D Frankfurt/M", "D Trier", "D Duisburg", "GB Swansea", "GB Manchester", "F le Havre", "GB London", "D Bremerhaven", "DK Herning", "DK Arhus", "D Hannover", "DK Copenhagen"
-  , "D Rostock" , "D Ingolstadt", "D Muenchen", "I Bolzano", "D Nuernberg", "D Leipzig", "D Erfurt", "CH Lausanne", "CH Zuerich", "CH Adelboden", "CH Sion", "CH Glarus", "CH Davos"
-  , "D Kassel", "CH Locarno", "I Sestriere" , "I Milano", "I Roma", "NL Amsterdam", "I Genova", "I Venezia", "D Strasbourg", "A Klagenfurt", "A Innsbruck", "A Salzburg", "A/SK Wien"
-  ,  "CZ Praha", "CZ Decin", "D Berlin", "S Gothenburg" , "S Stockholm", "S Kalmar", "S Joenkoeping", "D Donauechingen", "N Oslo", "D Stuttgart" , "I Napoli", "I Ancona", "I Bari"
-  , "H Budapest", "E Madrid", "E Bilbao", "I Palermo", "E Palma" , "E Valencia", "E Barcelona", "AND Andorra", "E Sevilla", "P Lissabon", "I Sassari", "E Gijon", "IRL Galway"
-  , "IRL Dublin", "GB Glasgow", "N Stavanger", "N Trondheim", "S Sundsvall", "PL Gdansk" , "PL Warszawa", "PL Krakow", "S Umea", "S Oestersund", "CH Samedan", "HR Zagreb", "CH Zermatt", "HR Split"
+const char *region[]  { "F  Bordeaux", "F  la Rochelle" , "F  Paris", "F  Brest", "F  Clermont", "F  Beziers", "B  Bruxelles", "F  Dijon", "F  Marseille", "F  Lyon", "F  Grenoble", "CH La Chaux"
+  , "D  Frankfurt/M", "D  Trier", "D  Duisburg", "GB Swansea", "GB Manchester", "F  le Havre", "GB London", "D  Bremerhaven", "DK Herning", "DK Arhus", "D  Hannover", "DK Copenhagen"
+  , "D  Rostock" , "D  Ingolstadt", "D  Muenchen", "I  Bolzano", "D  Nuernberg", "D  Leipzig", "D  Erfurt", "CH Lausanne", "CH Zuerich", "CH Adelboden", "CH Sion", "CH Glarus", "CH Davos"
+  , "D  Kassel", "CH Locarno", "I  Sestriere" , "I  Milano", "I  Roma", "NL Amsterdam", "I  Genova", "I  Venezia", "D  Strasbourg", "A  Klagenfurt", "A  Innsbruck", "A  Salzburg", "A  Wien"
+  ,  "CZ Praha", "CZ Decin", "D  Berlin", "S  Gothenburg" , "S  Stockholm", "S  Kalmar", "S  Joenkoeping", "D  Donauechingen", "N  Oslo", "D  Stuttgart" , "I  Napoli", "I  Ancona", "I  Bari"
+  , "H  Budapest", "E  Madrid", "E  Bilbao", "I  Palermo", "E  Palma" , "E  Valencia", "E  Barcelona", "AN Andorra", "E  Sevilla", "P  Lissabon", "I  Sassari", "E  Gijon", "IR Galway"
+  , "IR Dublin", "GB Glasgow", "N  Stavanger", "N  Trondheim", "S  Sundsvall", "PL Gdansk" , "PL Warszawa", "PL Krakow", "S  Umea", "S  Oestersund", "CH Samedan", "HR Zagreb", "CH Zermatt", "HR Split"
 };
 const char *weather[]  {  "Reserved", "Sunny", "Partly Clouded", "Mostly Clouded", "Overcast", "Heat Storms", "Heavy Rain", "Snow", "Fog", "Sleet", "Rain Showers", "Light Rain" , "Snow Showers",  "Frontal Storms", "Stratus Cloud", "Sleet Storms"};
 const char *heavyweather[]  {  "None", "Heavy Weather 24 hrs.", "Heavy Weather Day", "Heavy Weather Night", "Storm 24hrs.", "Storm Day", "Storm Night",
@@ -29,8 +29,8 @@ const char *heavyweather[]  {  "None", "Heavy Weather 24 hrs.", "Heavy Weather D
 const char *rain_prop[]  {"0 %", "15 %", "30 %", "45 %", "60 %", "75 %", "90 %", "100 %"};
 const char *winddirection[]  { "N", "NO", "O", "SO", "S", "SW", "W", "NW", "Changeable", "Foen", "Biese N/O", "Mistral N", "Scirocco S", "Tramont W", "Reserved", "Reserved"};
 const char *windstrength[]  {"0", "0-2", "3-4", "5-6", "7", "8", "9", ">=10"};
-const char *anomaly_1[]  {"No ", "1 ", "2 ", "3 "};
-const char *anomaly_2[]  {"0-2 hrs", "2-4 hrs", "5-6 hrs", "7-8 hrs"};
+const char *anomaly_1[]  {"No", "1", "2", "3"};
+const char *anomaly_2[]  {"0-2 h", "2-4 h", "5-6 h", "7-8 h"};
 
 //Version:
 String sw_version = "V0.3";
@@ -787,11 +787,12 @@ void show_forcast_table() {
 void show_forecast_vfd() {
 
   if (vfd_display == true) {
+    int len;
     vfd_counter++;
     vfd_counter_2++;
 
-    if (vfd_counter > 15 ) vfd_counter = 0;
-    if (vfd_counter == 0 || vfd_counter == 4 || vfd_counter == 8 || vfd_counter == 12) vfd_counter_2 = 0;
+    if (vfd_counter > 19 ) vfd_counter = 0;
+    if (vfd_counter == 0 || vfd_counter == 4 || vfd_counter == 8 || vfd_counter == 12 || vfd_counter == 16) vfd_counter_2 = 0;
 
     if (vfd_counter >= 0 && vfd_counter <= 7) {//Hoechstwerte
 
@@ -800,7 +801,13 @@ void show_forecast_vfd() {
       delay(10);
       Serial1.write(0x0B);//home position
       delay(10);
-      Serial1.print(String(region[user_region]) + " Day " + String(vfd_counter_2 + 1) + " H");
+      String area = String(region[user_region]);
+      len = area.length();
+      area = area.substring(3, len);
+      String vfd_text_top = area + " Day " + String(vfd_counter_2 + 1) + " H";
+      len = vfd_text_top.length();
+      if (len > 20) vfd_text_top = vfd_text_top.substring(0, 20);
+      Serial1.print(vfd_text_top);
 
       if (forecast_high_values[6][vfd_counter_2] == 10) { //decoder status
         delay(10);
@@ -809,12 +816,15 @@ void show_forecast_vfd() {
         Serial1.write(0x0D);//move cursor left end
         if (vfd_counter >= 0 && vfd_counter <= 3) {
           String vfd_text_down = String(forecast_high_values[5][vfd_counter_2]) + "C " + String(windstrength[forecast_high_values[1][vfd_counter_2]]) + "Bft " + String(winddirection[forecast_high_values[0][vfd_counter_2]]);
+          len = vfd_text_down.length();
+          if (len > 20) vfd_text_down = vfd_text_down.substring(0, 20);
           delay(10);
           Serial1.print(vfd_text_down);
         }
         if (vfd_counter >= 4 && vfd_counter <= 7) {
-          String vfd_text_down = String(weather[forecast_high_values[2][vfd_counter_2]]) + " N " + String(weather[forecast_high_values[3][vfd_counter_2]]) + " R " + String(rain_prop[extreme_values[2][vfd_counter_2]]);
-          delay(10);
+          String vfd_text_down = String(weather[forecast_high_values[2][vfd_counter_2]]) + " N " + String(weather[forecast_high_values[3][vfd_counter_2]]);
+          len = vfd_text_down.length();
+          if (len > 20) vfd_text_down = vfd_text_down.substring(0, 20); delay(10);
           Serial1.print(vfd_text_down);
         }
       }
@@ -827,7 +837,13 @@ void show_forecast_vfd() {
       delay(10);
       Serial1.write(0x0B);//home position
       delay(10);
-      Serial1.print(String(region[user_region]) + " Day " + String(vfd_counter_2 + 1) + " T");
+      String area = String(region[user_region]);
+      len = area.length();
+      area = area.substring(3, len);
+      String vfd_text_top = area + " Day " + String(vfd_counter_2 + 1) + " T";
+      len = vfd_text_top.length();
+      if (len > 20) vfd_text_top = vfd_text_top.substring(0, 20);
+      Serial1.print(vfd_text_top);
 
       if (forecast_low_values[6][vfd_counter_2] == 10) { //decoder status
         delay(10);
@@ -836,14 +852,52 @@ void show_forecast_vfd() {
         Serial1.write(0x0D);//move cursor left end
         if (vfd_counter >= 8 && vfd_counter <= 11 ) {
           String vfd_text_down = String(forecast_low_values[5][vfd_counter_2]) + "C " + String(windstrength[forecast_low_values[1][vfd_counter_2]]) + "Bft " + String(winddirection[forecast_low_values[0][vfd_counter_2]]);
+          len = vfd_text_down.length();
+          if (len > 20) vfd_text_down = vfd_text_down.substring(0, 20);
           delay(10);
           Serial1.print(vfd_text_down);
         }
         if (vfd_counter >= 12 && vfd_counter <= 15 ) {
-          String vfd_text_down = String(weather[forecast_low_values[2][vfd_counter_2]]) + " N " + String(weather[forecast_low_values[3][vfd_counter_2]]) + " R " + String(rain_prop[extreme_values[2][vfd_counter_2]]);
+          String vfd_text_down = String(weather[forecast_low_values[2][vfd_counter_2]]) + " N " + String(weather[forecast_low_values[3][vfd_counter_2]]);
+          len = vfd_text_down.length();
+          if (len > 20) vfd_text_down = vfd_text_down.substring(0, 20);
           delay(10);
           Serial1.print(vfd_text_down);
         }
+      }
+    }
+    //---------------------------------------------
+    if (vfd_counter >= 16 && vfd_counter <= 19 ) { //Extreme
+
+      delay(10);
+      Serial1.write(0x0C);//Clear display
+      delay(10);
+      Serial1.write(0x0B);//home position
+      delay(10);
+      String area = String(region[user_region]);
+      len = area.length();
+      area = area.substring(3, len);
+      String vfd_text_top = area + " Day " + String(vfd_counter_2 + 1) + " A";
+      len = vfd_text_top.length();
+      if (len > 20) vfd_text_top = vfd_text_top.substring(0, 20);
+      Serial1.print(vfd_text_top);
+
+      if (forecast_low_values[6][vfd_counter_2] == 10) { //decoder status
+        delay(10);
+        Serial1.write(0x0A);//move cursor down
+        delay(10);
+        Serial1.write(0x0D);//move cursor left end
+        String vfd_text_down;
+        if (extreme_values[0][vfd_counter_2] > 0) {
+          vfd_text_down  = "S " + String(anomaly_1[extreme_values[0][vfd_counter_2]]) + " T " + String(anomaly_2[extreme_values[1][vfd_counter_2]]) + " R " + String(rain_prop[extreme_values[2][vfd_counter_2]]);
+        }
+        else {
+          vfd_text_down = "S " + String(anomaly_1[extreme_values[0][vfd_counter_2]]) + " R " + String(rain_prop[extreme_values[2][vfd_counter_2]]);
+        }
+        len = vfd_text_down.length();
+        if (len > 20) vfd_text_down = vfd_text_down.substring(0, 20);
+        delay(10);
+        Serial1.print(vfd_text_down);
       }
     }
   }
@@ -876,7 +930,7 @@ int reverse_bits(int x, int z)     // bit reverse int val length z   (last to fi
 //---------------------------------------------------------------------
 void timer1_subroutine(void) {
   y++;
-  if (y > 2000) { // 9sec
+  if (y > 3000) { // 9sec
     timer1_event = true;
     y = 0;
   }
