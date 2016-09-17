@@ -7,7 +7,8 @@
 
 #define microseconds_1 3000   //Timer1
 #define led 13
-#define DCF_PIN 2           // Connection pin to DCF 77 device
+#define led_1 12           // time updated indicator
+#define DCF_PIN 2          // Connection pin to DCF 77 device
 #define DCF_INTERRUPT 0    // Interrupt number associated with pin
 
 time_t time;
@@ -34,7 +35,7 @@ const char *anomaly_2[]  {"0-2 h", "2-4 h", "5-6 h", "7-8 h"};
 
 //Version:
 String sw_version = "V0.4";
-boolean debuging = true;
+boolean debuging = false;
 boolean vfd_display = true;
 boolean time_updated = false;
 int vfd_counter = -1;
@@ -124,6 +125,7 @@ void setup() {
   Timer1.initialize(microseconds_1);
   Timer1.attachInterrupt(timer1_subroutine);
   pinMode(led, OUTPUT);
+  pinMode(led_1, OUTPUT);
 
   pinMode(DataIn, OUTPUT);
   pinMode(DataOut, INPUT);
@@ -167,6 +169,8 @@ void loop() {
   boolean val = digitalRead(DCF_PIN);
   if (val == LOW) digitalWrite(led, LOW);
   if (val == HIGH) digitalWrite(led, HIGH);
+  if (time_updated == true) digitalWrite(led_1, HIGH);
+
 
   time_t DCFtime = DCF.getTime(); // Check if new DCF77 time is available
   if (DCFtime != 0)  {
@@ -181,7 +185,7 @@ void loop() {
   if (time_updated == true) {
 
     if (second() == 59 && lock == false) {
-
+      digitalWrite(led_1, LOW);//reset update led
       lock = true;
       int result = (minute() + 1) % 3;
       String dcf_bitstream = DCF.getEncWeatherData();
