@@ -240,7 +240,7 @@ void loop() {
   }
 }
 //----------------------------------------------------------------------------------------------
-void init_eeprom_table() { // load all stored data into ram array
+void init_eeprom_table() { // clear all stored data in eeprom
 
   for (int i = 0; i < 7; i++) {
     for (int l = 0; l < 4; l++) {
@@ -536,7 +536,7 @@ void calc_data() {
       }
       //+++++++++++++++++++++++++++++++++++++++++++++++++++
       if (debuging == true) {
-        Serial.print("Weather Anomaly =      ");
+        Serial.print("Weather Anomaly   =      ");
         Serial.print(meteodata.substring(15, 16));
         Serial.print(" ");
       }
