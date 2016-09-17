@@ -3,6 +3,7 @@
 #include "DCF77.h"
 #include "TimeLib.h"
 #include <TimerOne.h>
+#include <EEPROM.h>
 
 
 #define microseconds_1 3000   //Timer1
@@ -34,8 +35,8 @@ const char *anomaly_1[]  {"No", "1", "2", "3"};
 const char *anomaly_2[]  {"0-2 h", "2-4 h", "5-6 h", "7-8 h"};
 
 //Version:
-String sw_version = "V0.4";
-boolean debuging = false;
+String sw_version = "V0.5";
+boolean debuging = true;
 boolean vfd_display = true;
 boolean time_updated = false;
 int vfd_counter = -1;
@@ -73,6 +74,30 @@ byte extreme_values[3][4] = {
   {0, 0, 0, 0}, //weather Extreme 1
   {0, 0, 0, 0}, //weather Extreme 2
   {0, 0, 0, 0}, //Rain Prop
+};
+//EEprom address:
+int eeprom_forecast_high_values[7][4] = { //1.day / 2.day / 3.day / 4.day
+  {3000, 3007, 3014, 3021}, //wind direction
+  {3001, 3008, 3015, 3022}, //wind strenth
+  {3002, 3009, 3016, 3023}, //day
+  {3003, 3010, 3017, 3024}, //night
+  {3004, 3011, 3018, 3025}, //weather anomaly
+  {3005, 3012, 3018, 3026}, //temperatur
+  {3006, 3013, 3020, 3027}, //decoder status
+};
+int eeprom_forecast_low_values[7][4] = { //1.day / 2.day / 3.day / 4.day
+  {4000, 4007, 4014, 4021}, //wind direction
+  {4001, 4008, 4015, 4022}, //wind strenth
+  {4002, 4009, 4016, 4023}, //day
+  {4003, 4010, 4017, 4024}, //night
+  {4004, 4011, 4018, 4025}, //weather anomaly
+  {4005, 4012, 4018, 4026}, //temperatur
+  {4006, 4013, 4020, 4027}, //decoder status
+};
+int eeprom_extreme_values[3][4] = {
+  {5000, 5003, 5006, 5009}, //weather Extreme 1
+  {5001, 5004, 5007, 5010}, //weather Extreme 2
+  {5002, 5005, 5008, 5011}, //Rain Prop
 };
 
 //UTC-Time schedule / +1h wintertime +2h sommertime:
@@ -151,12 +176,16 @@ void setup() {
   Serial1.write(0x0A);//move cursor down
   Serial1.write(0x0D);//move cursor left end
   Serial1.print("Waiting for Signal..");
+  //-----------------------
+  //init_eeprom_table();//reset all values
+  load_eeprom_table(); // load all stored data into ram array
 
   //setTime(13, 02, 00, 31, 12, 2016);
   //   0-3,   4-7,    8-11,   12-14,              15, 16-21,          22-23,
   //   day, night, winddir, windstr,  weatheranomaly,  temp,  decoder state,
 
   //meteodata = "111001101100011010110110"; //Test: 24bits: Snow, Heavy rain, SO, 9-Bf, No, 23⁰c
+
 }
 //----------------------------------------------------------------------------------------------
 void loop() {
@@ -209,6 +238,67 @@ void loop() {
       lock = false;
     }
   }
+}
+//----------------------------------------------------------------------------------------------
+void init_eeprom_table() { // load all stored data into ram array
+
+  for (int i = 0; i < 7; i++) {
+    for (int l = 0; l < 4; l++) {
+      int address = eeprom_forecast_high_values[i][l];
+      write_eeprom_byte(address, 0);
+    }
+  }
+
+  for (int i = 0; i < 7; i++) {
+    for (int l = 0; l < 4; l++) {
+      int address = eeprom_forecast_low_values[i][l];
+      write_eeprom_byte(address, 0);
+    }
+  }
+
+  for (int i = 0; i < 3; i++) {
+    for (int l = 0; l < 4; l++) {
+      int address = eeprom_extreme_values[i][l];
+      write_eeprom_byte(address, 0);
+    }
+  }
+}
+//----------------------------------------------------------------------------------------------
+void load_eeprom_table() { // load all stored data into ram array
+
+  for (int i = 0; i < 7; i++) {
+    for (int l = 0; l < 4; l++) {
+      int address = eeprom_forecast_high_values[i][l];
+      byte val = read_eeprom_byte(address);
+      forecast_high_values[i][l] = val; //1.day / 2.day / 3.day / 4.day
+    }
+  }
+
+  for (int i = 0; i < 7; i++) {
+    for (int l = 0; l < 4; l++) {
+      int address = eeprom_forecast_low_values[i][l];
+      byte val = read_eeprom_byte(address);
+      forecast_low_values[i][l] = val; //1.day / 2.day / 3.day / 4.day
+    }
+  }
+
+  for (int i = 0; i < 3; i++) {
+    for (int l = 0; l < 4; l++) {
+      int address = eeprom_extreme_values[i][l];
+      byte val = read_eeprom_byte(address);
+      extreme_values[i][l] = val; //1.day / 2.day / 3.day / 4.day
+    }
+  }
+}
+//----------------------------------------------------------------------------------------------
+void write_eeprom_byte(int address, byte value) {
+  EEPROM.update(address, value);
+}
+//----------------------------------------------------------------------------------------------
+byte read_eeprom_byte(int address) {
+  byte value;
+  value = EEPROM.read(address);
+  return value;
 }
 //----------------------------------------------------------------------------------------------
 void collect_data(String input, int packet) { //packet can 0=final,1=2.,2=1. packet
@@ -694,98 +784,75 @@ void fill_forecast_table() {
       }
       else {
         if (high_value == true) {
+          int address;
+          address = eeprom_extreme_values[0][day_x];
+          write_eeprom_byte(address, weather_extreme_1);
+          address = eeprom_extreme_values[1][day_x];
+          write_eeprom_byte(address, weather_extreme_2);
+          address = eeprom_extreme_values[2][day_x];
+          write_eeprom_byte(address, rain_propability);
 
-          extreme_values[0][day_x] = weather_extreme_1; //1.day / 2.day / 3.day / 4.day
-          extreme_values[1][day_x] = weather_extreme_2;
-          extreme_values[2][day_x] = rain_propability;
-
-          forecast_high_values[2][day_x] = day_value;
-          forecast_high_values[3][day_x] = night_value;
-          forecast_high_values[4][day_x] = weather_anomaly;
-          forecast_high_values[5][day_x] = temperatur;
-          forecast_high_values[6][day_x] = decoder_status;
+          address = eeprom_forecast_high_values[0][day_x];
+          write_eeprom_byte(address, wind_direction);
+          address = eeprom_forecast_high_values[1][day_x];
+          write_eeprom_byte(address, wind_strength);
+          address = eeprom_forecast_high_values[2][day_x];
+          write_eeprom_byte(address, day_value);
+          address = eeprom_forecast_high_values[3][day_x];
+          write_eeprom_byte(address, night_value);
+          address = eeprom_forecast_high_values[4][day_x];
+          write_eeprom_byte(address, weather_anomaly);
+          address = eeprom_forecast_high_values[5][day_x];
+          write_eeprom_byte(address, temperatur);
+          address = eeprom_forecast_high_values[6][day_x];
+          write_eeprom_byte(address, decoder_status);
         }
         if (high_value == false) {
-
-          forecast_low_values[0][day_x] = wind_direction; //1.day / 2.day / 3.day / 4.day
-          forecast_low_values[1][day_x] = wind_strength;
-
-          forecast_low_values[2][day_x] = day_value;
-          forecast_low_values[3][day_x] = night_value;
-          forecast_low_values[4][day_x] = weather_anomaly;
-          forecast_low_values[5][day_x] = temperatur;
-          forecast_low_values[6][day_x] = decoder_status;
+          int address;
+          address = eeprom_forecast_low_values[0][day_x];
+          write_eeprom_byte(address, wind_direction);
+          address = eeprom_forecast_low_values[1][day_x];
+          write_eeprom_byte(address, wind_strength);
+          address = eeprom_forecast_low_values[2][day_x];
+          write_eeprom_byte(address, day_value);
+          address = eeprom_forecast_low_values[3][day_x];
+          write_eeprom_byte(address, night_value);
+          address = eeprom_forecast_low_values[4][day_x];
+          write_eeprom_byte(address, weather_anomaly);
+          address = eeprom_forecast_low_values[5][day_x];
+          write_eeprom_byte(address, temperatur);
+          address = eeprom_forecast_low_values[6][day_x];
+          write_eeprom_byte(address, decoder_status);
         }
       }
     }
+    load_eeprom_table(); // load all stored data into ram array
   }
-  //-----------------------------------
-
-  //  wind_direction;
-  //  weather_extreme_1;
-  //  weather_extreme_2;
-  //  wind_strength;
-  //  rain_propability;
-  //  day_value;
-  //  night_value;
-  //  weather_anomaly;
-  //  temperatur;
-  //  decoder_status;
-
-  //  if (vfd_display == true) {
-  //    String high_low;
-  //    if (high_value == true) high_low = " H";
-  //    if (high_value == false) high_low = " T";
-  //    if (propagation == true) high_low = " P";
-  //    String vfd_text_top = String(region[region_code]) + " Day" + String(day_x + 1) + high_low;
-  //    int len = vfd_text_top.length();
-  //    if (len > 20) {
-  //      vfd_text_top = vfd_text_top.substring(0, 20);
-  //    }
-  //    delay(10);
-  //    Serial1.write(0x0C);//Clear display
-  //    delay(10);
-  //    Serial1.write(0x0B);//home position
-  //    delay(10);
-  //    Serial1.print(vfd_text_top);
-  //    if (decoder_status == 10) {
-  //      String vfd_text_down = String(temperatur) + "C " + String(windstrength[wind_strength]) + "Bft " + String(winddirection[wind_direction]);
-  //      len = vfd_text_down.length();
-  //      if (len > 20) {
-  //        vfd_text_down = vfd_text_down.substring(0, 20);
-  //      }
-  //      delay(10);
-  //      Serial1.write(0x0A);//move cursor down
-  //      delay(10);
-  //      Serial1.write(0x0D);//move cursor left end
-  //      delay(10);
-  //      Serial1.print(vfd_text_down);
-  //    }
-  //  }
 }
 //---------------------------------------------------------------------
 void show_forcast_table() {
 
   if (debuging == true) {
     Serial.println();
-    Serial.print("My Region: " + String(user_region) + " ");
+    Serial.print("My Region:" + String(user_region) + " ");
     Serial.println(region[user_region]);
-    Serial.println("High: ");
+    Serial.println("High:");
     for (int k = 0; k < 4; k++) {
-      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_high_values[0][k]] + " Wind Strength: " + windstrength[forecast_high_values[1][k]] + "Bft Day: " + weather[forecast_high_values[2][k]] + " Night: " + weather[forecast_high_values[3][k]] + " Temp: " + forecast_high_values[5][k]  + "C Rain : " + rain_prop[extreme_values[2][k]] + " Decoder Status: " + forecast_high_values[6][k]);
+      if (forecast_high_values[6][k] == 10)Serial.println("Day:" + String(k + 1) + " Wind Dir:" + winddirection[forecast_high_values[0][k]] + " Wind Strength:" + windstrength[forecast_high_values[1][k]] + "Bft Day:" + weather[forecast_high_values[2][k]] + " Night:" + weather[forecast_high_values[3][k]] + " Temp:" + forecast_high_values[5][k]  + "C Rain:" + rain_prop[extreme_values[2][k]] + " Decoder Status:" + forecast_high_values[6][k]);
     }
-    Serial.println("Low: ");
+    Serial.println("Low:");
     for (int k = 0; k < 4; k++) {
-      Serial.println("Day " + String(k + 1) + ": Wind Dir: " + winddirection[forecast_low_values[0][k]] + " Wind Strength: " + windstrength[forecast_low_values[1][k]] + "Bft Day: " + weather[forecast_low_values[2][k]] + " Night: " + weather[forecast_low_values[3][k]] + " Temp: " + forecast_low_values[5][k]  + "C Rain : " + rain_prop[extreme_values[2][k]] + " Decoder Status: " + forecast_low_values[6][k]);
+      if (forecast_low_values[6][k] == 10)Serial.println("Day:" + String(k + 1) + " Wind Dir:" + winddirection[forecast_low_values[0][k]] + " Wind Strength:" + windstrength[forecast_low_values[1][k]] + "Bft Day:" + weather[forecast_low_values[2][k]] + " Night:" + weather[forecast_low_values[3][k]] + " Temp:" + forecast_low_values[5][k]  + "C Rain:" + rain_prop[extreme_values[2][k]] + " Decoder Status:" + forecast_low_values[6][k]);
     }
-    Serial.println("Anomaly: ");
+    Serial.println("Anomaly:");
     for (int k = 0; k < 4; k++) {
-      if (forecast_high_values[4][k] == 1) {//day x: weather Anomaly
-        Serial.println("Day " + String(k + 1) + " Anomaly: " + anomaly_1[forecast_high_values[4][k]] + ": Risk:" + anomaly_1[extreme_values[0][k]] + " Next:" + anomaly_2[extreme_values[1][k]]);
+      if (forecast_high_values[4][k] == 1) {//day x:weather Anomaly
+        if (forecast_high_values[6][k] == 10)Serial.println("Day:" + String(k + 1) + " Anomaly:" + anomaly_1[forecast_high_values[4][k]] + " Risk:" + anomaly_1[extreme_values[0][k]] + " Next:" + anomaly_2[extreme_values[1][k]]);
       }
-      Serial.println("Day " + String(k + 1) + " No Anomaly");
+      if (forecast_high_values[6][k] == 10)Serial.println("Day:" + String(k + 1) + " No Anomaly");
     }
     Serial.println();
+    //------------------------------------
   }
 }
 //---------------------------------------------------------------------
