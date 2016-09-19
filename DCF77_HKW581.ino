@@ -5,7 +5,6 @@
 #include <TimerOne.h>
 #include <EEPROM.h>
 
-
 #define microseconds_1 3000   //Timer1
 #define led 13
 #define led_1 12           // time updated indicator
@@ -35,14 +34,9 @@ const char *anomaly_1[]  {"No", "1", "2", "3"};
 const char *anomaly_2[]  {"0-2 h", "2-4 h", "5-6 h", "7-8 h"};
 
 //Version:
-String sw_version = "V0.5";
+String sw_version = "V0.6";
 boolean debuging = true;
-boolean vfd_display = true;
 boolean time_updated = false;
-int vfd_counter = -1;
-int day_counter = 0;
-String vfd_upper_line = "";
-String vfd_lower_line = "";
 int y = 0;
 boolean timer1_event = false;
 
@@ -161,21 +155,12 @@ void setup() {
   digitalWrite(ClockIn, LOW);
 
   Serial.begin(9600);
-  Serial1.begin(9600);
-  Serial1.write(0x1B);//init vfd
-  Serial1.write(0x40);//init vfd
   DCF.Start();
   Serial.println(sw_version);
   Serial.println("Waiting for DFC77 Signal.................");
   Serial.print("My Region: " + String(user_region) + " ");
   Serial.println(region[user_region]);
 
-  Serial1.write(0x0C);//Clear display
-  Serial1.write(0x0B);//home position
-  Serial1.print("DCF77 " + sw_version);
-  Serial1.write(0x0A);//move cursor down
-  Serial1.write(0x0D);//move cursor left end
-  Serial1.print("Waiting for Signal..");
   //-----------------------
   //init_eeprom_table();//reset all values
   load_eeprom_table(); // load all stored data into ram array
@@ -192,7 +177,7 @@ void loop() {
 
   if (timer1_event == true) {
     timer1_event = false;
-    show_forecast_vfd();
+    //do something
   }
 
   boolean val = digitalRead(DCF_PIN);
@@ -853,151 +838,6 @@ void show_forcast_table() {
     }
     Serial.println();
     //------------------------------------
-  }
-}
-//---------------------------------------------------------------------
-void send_text_to_vfd(String input_text) {//Horizontal Scrollmode
-
-  int len = input_text.length();
-  delay(10);
-  Serial1.write(0x0C);//Clear display
-  delay(10);
-  Serial1.write(0x0B);//home position
-  vfd_upper_line = vfd_lower_line;
-  delay(10);
-  Serial1.print(vfd_upper_line);
-
-  delay(10);
-  Serial1.write(0x0B);//home position
-  delay(10);
-  Serial1.write(0x0A); //move cursor down
-  delay(10);
-  Serial1.write(0x0D);//move cursor left end
-  vfd_lower_line = input_text;
-  delay(10);
-  Serial1.print(vfd_lower_line);
-
-}
-//---------------------------------------------------------------------
-void show_forecast_vfd() {
-
-  if (vfd_display == true) {
-    int len;
-    vfd_counter++;
-
-    if (vfd_counter > 31 ) vfd_counter = 0;
-    //-------------------------------------------
-    if (vfd_counter >= 0 && vfd_counter <= 11) {//Hoechstwerte
-
-      if (vfd_counter == 0 || vfd_counter == 3 || vfd_counter == 6 || vfd_counter == 9) {
-        if (vfd_counter == 0 )day_counter = 0;
-        String area = String(region[user_region]);
-        len = area.length();
-        area = area.substring(3, len);
-        String vfd_text = area + " Tag " + String(day_counter + 1) + " Hoch";
-        len = vfd_text.length();
-        if (len > 20) vfd_text = vfd_text.substring(0, 20);
-        send_text_to_vfd(vfd_text);
-      }
-
-      if (vfd_counter == 1 || vfd_counter == 4 || vfd_counter == 7 || vfd_counter == 10) {
-        if (forecast_high_values[6][day_counter] == 10) { //decoder status
-          String vfd_text = String(forecast_high_values[5][day_counter]) + "C " + String(windstrength[forecast_high_values[1][day_counter]]) + "Bft " + String(winddirection[forecast_high_values[0][day_counter]]) + "+";
-          len = vfd_text.length();
-          if (len > 20) vfd_text = vfd_text.substring(0, 20);
-          send_text_to_vfd(vfd_text);
-        }
-        else {
-          send_text_to_vfd("n/a");
-        }
-      }
-
-      if (vfd_counter == 2 || vfd_counter == 5 || vfd_counter == 8 || vfd_counter == 11) {
-        if (forecast_high_values[6][day_counter] == 10) { //decoder status
-          String vfd_text = "T:" + String(weather[forecast_high_values[2][day_counter]]) + " N:" + String(weather[forecast_high_values[3][day_counter]]);
-          len = vfd_text.length();
-          if (len > 20) vfd_text = vfd_text.substring(0, 20);
-          send_text_to_vfd(vfd_text);
-          day_counter++;
-        }
-        else {
-          send_text_to_vfd("n/a");
-          day_counter++;
-        }
-      }
-    }
-    //---------------------------------------------
-    if (vfd_counter >= 12 && vfd_counter <= 23) {//Tiefstwerte
-
-      if (vfd_counter == 12 || vfd_counter == 15 || vfd_counter == 18 || vfd_counter == 21) {
-        if (vfd_counter == 12 ) day_counter = 0;
-        String area = String(region[user_region]);
-        len = area.length();
-        area = area.substring(3, len);
-        String vfd_text = area + " Tag " + String(day_counter + 1) + " Tief";
-        len = vfd_text.length();
-        if (len > 20) vfd_text = vfd_text.substring(0, 20);
-        send_text_to_vfd(vfd_text);
-      }
-
-      if (vfd_counter == 13 || vfd_counter == 16 || vfd_counter == 19 || vfd_counter == 22) {
-        if (forecast_low_values[6][day_counter] == 10) { //decoder status
-          String vfd_text = String(forecast_low_values[5][day_counter]) + "C " + String(windstrength[forecast_low_values[1][day_counter]]) + "Bft " + String(winddirection[forecast_low_values[0][day_counter]]) + "+";
-          len = vfd_text.length();
-          if (len > 20) vfd_text = vfd_text.substring(0, 20);
-          send_text_to_vfd(vfd_text);
-        }
-        else {
-          send_text_to_vfd("n/a");
-        }
-      }
-      if (vfd_counter == 14 || vfd_counter == 17 || vfd_counter == 20 || vfd_counter == 23) {
-        if (forecast_low_values[6][day_counter] == 10) { //decoder status
-          String vfd_text = "T:" + String(weather[forecast_low_values[2][day_counter]]) + " N:" + String(weather[forecast_low_values[3][day_counter]]);
-          len = vfd_text.length();
-          if (len > 20) vfd_text = vfd_text.substring(0, 20);
-          send_text_to_vfd(vfd_text);
-          day_counter++;
-        }
-        else {
-          send_text_to_vfd("n/a");
-          day_counter++;
-        }
-      }
-    }
-    //---------------------------------------------
-    if (vfd_counter >= 24 && vfd_counter <= 31 ) { //Extreme
-      if (vfd_counter == 24 || vfd_counter == 26 || vfd_counter == 28 || vfd_counter == 30) {
-        if (vfd_counter == 24) day_counter = 0;
-        String area = String(region[user_region]);
-        len = area.length();
-        area = area.substring(3, len);
-        String vfd_text = area + " Tag " + String(day_counter + 1) + " Anom";
-        len = vfd_text.length();
-        if (len > 20) vfd_text = vfd_text.substring(0, 20);
-        send_text_to_vfd(vfd_text);
-      }
-
-      if (vfd_counter == 25 || vfd_counter == 27 || vfd_counter == 29 || vfd_counter == 31) {
-        if (forecast_low_values[6][day_counter] == 10) { //decoder status
-          String vfd_text;
-          if (extreme_values[0][day_counter] > 0) {
-            vfd_text  = "K " + String(anomaly_1[extreme_values[0][day_counter]]) + " " + String(anomaly_2[extreme_values[1][day_counter]]) + " R " + String(rain_prop[extreme_values[2][day_counter]]);
-          }
-          else {
-            vfd_text = String(anomaly_1[extreme_values[0][day_counter]]) + " R " + String(rain_prop[extreme_values[2][day_counter]]);
-          }
-          len = vfd_text.length();
-          if (len > 20) vfd_text = vfd_text.substring(0, 20);
-          send_text_to_vfd(vfd_text);
-          day_counter++;
-        }
-        else {
-          send_text_to_vfd("n/a");
-          day_counter++;
-        }
-      }
-    }
   }
 }
 //---------------------------------------------------------------------
