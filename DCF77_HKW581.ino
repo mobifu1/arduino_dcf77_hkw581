@@ -44,6 +44,7 @@ boolean timer1_event = false;
 int region_code;
 byte user_region = 22; //Hannover 22
 byte daylight_saving_time = 0;
+int utc_hour_int;
 
 //Region Forecast:
 byte forecast_high_values[7][4] = { //1.day / 2.day / 3.day / 4.day
@@ -712,11 +713,15 @@ void fill_forecast_table() {
   byte day_x = 0;
   boolean high_value = false;
   boolean propagation = false;
-  int utc_hour_int = hour();
+  utc_hour_int = hour();
   utc_hour_int -= daylight_saving_time;
   if (utc_hour_int < 0)utc_hour_int += 24;
 
-  if (utc_hour_int  >= 22  && utc_hour_int  <= 0 ) { //UTC 22:02-00:59 > 1.day=today Höchstwerte
+  if (utc_hour_int  >= 22  && utc_hour_int  <= 23 ) { //UTC 22:02-00:59 > 1.day=today Höchstwerte
+    day_x = 0;
+    high_value = true;
+  }
+  if (utc_hour_int  == 0 ) { //UTC 22:02-00:59 > 1.day=today Höchstwerte
     day_x = 0;
     high_value = true;
   }
